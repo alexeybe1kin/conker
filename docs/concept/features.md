@@ -21,7 +21,7 @@ Legend: **[core]** universal layer · **[app]** domain app that owns its own tru
   every message triggering a response.
 - Auto-response toggle; explicit pending/queued state while composing.
 - Companion Journal — what it did, why, and on what evidence.
-- Proactive briefings.
+- Proactive briefings — see **A10**, which is where this actually lives.
 - Truthful status presentation everywhere (see `principles.md`).
 
 ## A2. Memory boundary `[core]`
@@ -131,6 +131,49 @@ Read-only truth about machines and services.
   **never grants permissions**.
 - Software supply chain ownership: packages, libraries, containers, SBOMs,
   vulnerabilities, licenses, update ownership.
+
+## A10. Proactive initiative and the daily loop `[core]`
+
+The Companion **opens the conversation**. It is not a thing you remember to query —
+it is present, watching, and it tells you what changed. This is the difference between
+a chatbot and a companion, and it composes every other capability in Part A.
+
+**The daily talk.** In ordinary conversation, without being asked, it surfaces:
+
+- what changed since you last spoke;
+- machine and infrastructure state — services, **ports**, storage, updates, backups,
+  security posture, anything newly exposed or newly broken;
+- research and news filtered to *your* goals and *this* architecture, not a generic feed;
+- opportunities with deadlines approaching;
+- unfinished commitments, stalled work, and promises you made;
+- things a domain app flagged as worth your attention;
+- what it did while you were away, and on what evidence.
+
+**Self-initiated work.** It doesn't only report — it proposes and prepares:
+
+- notices a gap and suggests a thing worth building;
+- **builds and deploys on the owner's own server** — services, tools, scripts,
+  small apps — as prepared work awaiting approval;
+- drafts posts and content for the owner's identities;
+- prepares patches, migrations, and remediations;
+- proposes schedule changes when goals collide;
+- runs jobs and reports results back into the conversation.
+
+**Attention policy.** Proactivity is worthless if it becomes noise, and dangerous if it
+becomes autonomy.
+
+- Explicit rules for what interrupts *now* vs. what waits for the next briefing vs. what
+  is merely logged.
+- A quietness budget — a ceiling on unprompted contact.
+- Everything it raises traces back to a source and a memory record; it can always answer
+  "why are you telling me this?"
+- Everything it prepares stops at the approval boundary. Preparing is free; shipping is not.
+
+> **Open tension, not a settled design.** This capability pulls directly against
+> `principles.md` §5 (approval binds to one exact action) and §10 (no autonomous posting,
+> messaging, or spending). "The Companion built and deployed something on my server
+> because it thought I'd want it" is either the best feature here or the worst, depending
+> entirely on where the line sits. Where that line goes is a decision, not a detail.
 
 ---
 

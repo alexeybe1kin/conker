@@ -38,3 +38,16 @@ a requirement only when a decision ticket resolves it into one.
 - Keep the repo root clean. No one-off patch scripts, no orphaned source files, no
   scratch output committed.
 - `main` is stable. Work happens on branches.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues in `alexeybe1kin/companion`, driven via the `gh` CLI;
+wayfinder maps and tickets use sub-issues and native issue dependencies.
+See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root, both created
+lazily by `/domain-modeling`. See `docs/agents/domain.md`.
