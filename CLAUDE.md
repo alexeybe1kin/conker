@@ -17,40 +17,57 @@ different brand. Nothing from it is inherited or authoritative; it is reference 
 fork it, run it, understand it, and be glad they did — clean, modular, documented, organised.
 No slop. This outranks speed.
 
-## Status: planning, not building
+## Status: charted, ready to build
 
-Nothing is being implemented yet. The project is being charted with the `wayfinder` skill:
-a map of decision tickets on the issue tracker, resolved one at a time until the route is
-clear. Do not write implementation code until the map says the way is clear.
+**Charting is complete.** Eighteen decision tickets were resolved; the architecture is settled and
+the roadmap is written. The way is clear, and implementation of **C1** may begin — see
+[`docs/roadmap.md`](docs/roadmap.md) for what it contains and in what order.
+
+C1 starts with a hard prerequisite: **the gate repositories must publish versioned images to GHCR
+from CI.** They ship source only today, so `docker-compose` has nothing to pin and nothing is
+installable. That is the first line of work, before any Conker code.
 
 **Order of work: architecture and plan → roadmap → build.**
 
 **There are no product versions.** The system ships as a sequence of **roadmap checkpoints**.
-Everything in the idea archive is eventually built; the roadmap decides order, never inclusion.
+Every Conker capability is eventually built; the roadmap decides order, never inclusion.
 "Later" never means "cut". Older tickets that say `v1` mean *the first checkpoints*, and `v2`
 means *a later checkpoint* — they predate this framing and their substance still stands.
 
 **The architecture must hold the whole system.** Every decision is tested against the end state —
-voice, video, avatar, teams, flows, spatial presence, the eight domain products — before it is
-recorded. A decision that only works for the early checkpoints is not finished.
+voice, video, avatar, teams, flows, spatial presence — before it is recorded. A decision that only
+works for the early checkpoints is not finished.
+
+**Conker is the universal layer and nothing else.** The eight domain products in the idea archive
+are **not parts of Conker** — they are among the things Conker will be *asked to build* once it
+works. Nothing in this repository designs one.
 
 ## Source of truth
 
-Read in this order:
+**Everything needed to work on Conker is in this repository.** Read in this order:
 
-1. Resolved wayfinder decision tickets (the map's "Decisions so far") and the map's Notes.
-2. [`docs/concept/the-idea.md`](docs/concept/the-idea.md) — **primary.** The idea, and what
-   already exists. Supersedes the three notes below wherever they disagree.
-3. [`docs/concept/vision.md`](docs/concept/vision.md) — earlier notes: the experience, the
-   four boundaries, the ownership rule. Partly superseded; header says what was corrected.
-4. [`docs/concept/features.md`](docs/concept/features.md) — complete inventory of every
-   feature idea. Unordered, uncommitted, unprioritised.
-5. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over,
-   all open to challenge.
-6. [`docs/research/`](docs/research/) — verified findings about the gates and about prior art.
+1. [`CONTEXT.md`](CONTEXT.md) — the vocabulary. Use these words; they are load-bearing.
+2. [`docs/architecture.md`](docs/architecture.md) — how the system is shaped. Start here.
+3. [`docs/roadmap.md`](docs/roadmap.md) — what gets built, in what order. **C1 is next.**
+4. [`docs/adr/`](docs/adr/) — why each hard-to-reverse decision was made. Read the ones that touch
+   what you are about to change; contradicting one is allowed, doing it silently is not.
+5. [`docs/research/`](docs/research/) — verified findings about the gates and about prior art,
+   with `path:line` citations. Facts, not opinions.
 
-The concept docs are **raw material, not requirements**. An idea in `features.md` becomes
-a requirement only when a decision ticket resolves it into one.
+Then the concept notes, which are **raw material, not requirements**:
+
+6. [`docs/concept/the-idea.md`](docs/concept/the-idea.md) — the idea and what already exists.
+7. [`docs/concept/vision.md`](docs/concept/vision.md) — earlier notes, partly superseded; its
+   header says what was corrected.
+8. [`docs/concept/features.md`](docs/concept/features.md) — the complete inventory of feature
+   ideas. Unordered, uncommitted, unprioritised.
+9. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over, all
+   open to challenge.
+
+An idea in `features.md` becomes a requirement only when a decision resolves it into one.
+
+The full reasoning behind every decision, including ones too reversible to earn an ADR, lives in
+the resolved tickets on the issue tracker — the map's "Decisions so far" is the index.
 
 ## Working rules
 

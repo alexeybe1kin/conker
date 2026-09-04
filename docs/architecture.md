@@ -1,0 +1,229 @@
+# Architecture
+
+How Conker is shaped. **Why** each choice was made lives in [`adr/`](adr/); this document describes
+the system that resulted. Vocabulary is defined in [`../CONTEXT.md`](../CONTEXT.md). Build order is
+in [`roadmap.md`](roadmap.md).
+
+---
+
+## 1. What Conker is
+
+Conker is a **self-hosted personal AI companion and control plane** for one owner, on one server,
+reachable only over a private network.
+
+The premise, from [`concept/the-idea.md`](concept/the-idea.md): AI is a way to reclaim time. Two
+things cannot be delegated because they live in the owner physically — **the body** and
+**knowledge**. Everything else is overhead, and overhead is automatable.
+
+But "automate everything" is too wide a frame to build on, which is the actual reason for memory:
+
+> **Memory is the record that makes it possible to notice what is repeated, forgotten, or
+> automatable.**
+
+So Conker is not a chatbot with a memory feature. It is a loop, and memory is what closes it.
+
+```
+what you do and say  →  evidence + memory  →  pattern recognition  →  proposal  →  approval  →  execution
+                              ↑                                                                     │
+                              └─────────────────── becomes new evidence ────────────────────────────┘
+```
+
+Pattern recognition runs **nightly on a schedule** and **live in conversation**. Triggering on every
+new memory was considered and rejected on cost.
+
+**Consequence for design:** the screen showing what Conker is *proposing* matters more than the
+chat. Chat is how you talk to it; proposals are what it is for.
+
+**Conker is the universal layer and nothing else.** The eight domain products in the idea archive
+are not parts of Conker — they are among the things Conker will be asked to build once it works.
+
+---
+
+## 2. Components
+
+Five services and one dashboard.
+
+| Component | Owns | Status |
+|---|---|---|
+| **Pi** | Agent turns, sessions, jobs and cron, model routing, execution history. The only service the browser talks to. | Planned |
+| **MemoryGate** | Evidence → analysis → memory, with lineage. PostgreSQL as source of truth, vector index for semantic search. | Live, semantic retrieval degraded |
+| **ToolGate** | Every real-world action: tools, secrets, policy, execution, audit, approvals. | Live, MCP bridge defective |
+| **SystemGate** | Read-only machine truth: health, processes, ports, containers, packages, backups, logs. | Live |
+| **Embedding service** | Text → vectors. Sidecar, swappable model. | Planned |
+| **Dashboard** | The owner's surface. Nine screens. | Planned |
+
+Status uses the eight-state vocabulary from `principles.md` §1. Nothing is `live` because it was
+designed. Verified detail: [`research/gate-surfaces.md`](research/gate-surfaces.md).
+
+```
+                    Owner's devices — thin
+                              │  Tailscale, private network only
+                        ┌─────┴─────┐
+                        │ Dashboard │
+                        └─────┬─────┘
+                              │  every request, nothing else
+                    ┌─────────┴─────────┐
+                    │   Pi — runtime    │
+                    └─────────┬─────────┘
+          ┌───────────┬───────┴───────┬─────────────┐
+     MemoryGate   ToolGate       SystemGate    what Conker builds
+     remembers      acts          observes      (tools, via ToolGate)
+          │            │
+     Embedding    outside world
+```
+
+### The rule that holds it together
+
+**Boundaries do not blur.**
+
+- MemoryGate remembers; it never executes.
+- ToolGate acts; it never decides what the owner values.
+- SystemGate observes; it is never a shell or an execution path.
+- Pi coordinates; it never becomes the database. **No store beyond session state and execution
+  history.**
+
+Each is a refusal, and the refusals are what make an always-on system with server access safe to
+live with.
+
+### The browser never touches a gate
+
+The dashboard talks only to Pi. This is what keeps `principles.md` §3's forbidden list — provider
+keys, admin keys, raw tool arguments, command lines, host paths, container sockets — off the client
+structurally rather than by discipline.
+
+The "terminal" surface in the concept notes is a **view** of what SystemGate observed and ToolGate
+executed. A real interactive shell in an untrusted client would be a backdoor around the action
+boundary and is not built.
+
+---
+
+## 3. How the AI works
+
+Pi runs a deliberately thin turn loop over a provider abstraction. Thin matters: the loop must
+behave identically no matter which model answers.
+
+**A turn.** A message arrives. Pi assembles context — recent conversation plus a bounded package
+from MemoryGate, never a raw database read. It routes to a model, calls it with the tools ToolGate
+currently exposes, executes tool calls back through ToolGate, and appends the result.
+
+**History is append-only.** Current models bind reasoning blocks to the producing model and reject
+edited history. Nothing is ever rewritten in place.
+
+**Routing.** A cheap model carries ordinary conversation and escalates on explicit signals — tool
+use needed, a failed call needing recovery, analysis rather than conversation, or the owner asking.
+Escalation triggers are logged and reviewed, because a cheap model that fails and escalates has cost
+both.
+
+**Free by default.** Every free and local model is discovered and configured automatically, so a
+fresh install works with no payment and no key. Paid models are the owner's own, added deliberately.
+Spend is tracked per turn — model, tokens in and out, cached tokens, cost, latency — precisely
+because it is their money.
+
+**Caching before model choice.** Pi's system prompt and tool definitions are stable across turns.
+Rendered stable-first, they cache and only the volatile tail is re-billed. Nothing per-request may
+leak into that prefix. Lever order: caching → input-token hygiene → effort/model tier → provider.
+
+**When context runs out**, Pi summarises and **forks**: closes the session, writes a summary, opens
+a child seeded by it pointing back at the parent. Lineage stays walkable.
+
+**The nightly job** reads new evidence since a watermark, never the corpus, under a hard token
+budget. Its output is proposals. It executes nothing.
+
+---
+
+## 4. What Conker may do without asking
+
+Configured by the owner, per action class. See [ADR-0006](adr/0006-autonomy-is-a-configurable-policy.md).
+
+| Class | Default |
+|---|---|
+| **Observe** — read, analyse, search, draft, propose | Always free. The whole nightly engine lives here. |
+| **Prepare** — build, stage, write files that are not executed | Free; can be tightened |
+| **Act locally** — run a service, execute a script | Approval required; can be loosened |
+| **Act outward** — send, post, spend, external accounts | Approval required; per-capability opt-in with a hard limit |
+
+`principles.md` §10's refusals are never settings. Raising a level changes *whether a class must
+ask*, never *how long a yes lasts* — there is no always-allow for an individual action.
+
+---
+
+## 5. Install and first run
+
+**One terminal command.** No web installer. The script checks the machine, asks a few
+plain-language questions, generates every secret, writes compose with **pinned image tags**, pulls,
+starts, waits for health, and prints one URL.
+
+It never asks for anything it can work out itself, never asks a person to invent a secret, never
+reports success for a service it did not reach, and on failure names what broke and the exact next
+step. It is idempotent and upgradeable.
+
+**Distribution:** this repository is the umbrella — installer, compose, docs, Pi, dashboard, design
+system. The gates are consumed as pinned GHCR images from their own repositories, so each stays
+independently forkable and runnable.
+
+**Tailscale is offered, never assumed.** Default binds to localhost and the local network. There is
+no public-internet path at all, and the docs say why.
+
+**First run:** a designed welcome that asks nothing · your name, then a password explained in plain
+words · name and shape your companion (`Conker` is only the default; voice and appearance drop into
+this step at later checkpoints) · a short honest summary of service state.
+
+Then a **guided tour**: one element highlighted at a time, explained in a small dialog pointing at
+the real thing on the real screen. Replayable from help, skippable at every step, never blocking the
+product, running on real screens with real data — anything illustrative is labelled as an example.
+
+---
+
+## 6. Screens
+
+Nine, ordered by how often they are needed.
+
+**The daily loop** — Chat · **Proposals** · Approvals
+**Reference** — Memory · Journal
+**Control** — Agents · Tools · Jobs · System
+
+Settings and model spend live inside the screens they belong to.
+
+**Proposals is the most important screen in the product.** Each proposal shows what Conker noticed,
+the evidence behind it with a path back to the source, what it suggests, and what would happen if
+approved. A proposal that cannot answer *"why are you telling me this?"* is not shown.
+
+**Truthful status is a component**, not a convention — one implementation of the eight states, used
+everywhere. No green badge from intended configuration. A stale value shows its age. A failed fetch
+shows `unknown`, never a stale value silently reused. `empty` and `degraded` look different, because
+"nothing yet" and "it failed" are different facts.
+
+One responsive application, not separate desktop and mobile products.
+
+---
+
+## 7. One product, not five
+
+One **design system** — tokens for both themes, layout, components, iconography, the status
+vocabulary — defined once and consumed by the only UI. No module defines its own colour or type.
+
+Every module presents identically from outside:
+
+| Ships | Meaning |
+|---|---|
+| `README.md` | Same sections, same order: what it is · its boundary · run it · configure it · API · status |
+| `GET /health` | Identical shape everywhere, so one dashboard renders any module with no special cases |
+| `openapi.json` | Generated, never hand-written. This is what a forker swaps against |
+| `docker-compose.yml` | Runs standalone for development, composes into the whole for real use |
+| `CHANGELOG.md` | Honest versioning, so replacing a module has visible consequences |
+| Config & errors | One style, one shape, documented precedence |
+
+**Enforced in CI**, including a lint rule failing the build on a raw hex value or font-family in
+application code. A convention nobody checks decays.
+
+**Naming carries information.** `-Gate` marks a controlled boundary. Pi passes through them and does
+not take the suffix.
+
+---
+
+## 8. Stack
+
+Python and FastAPI for every service, matching the gates — one backend language, one toolchain.
+React for the dashboard. Pi keeps sessions and history in SQLite with WAL; MemoryGate uses
+PostgreSQL and a vector index; ToolGate uses SQLite. Docker Compose composes the set. One Ubuntu
+server, running 24/7, devices thin.
