@@ -148,6 +148,8 @@ write the replacement decision down before the code that assumes it.
 ### Reach for these
 
 Not a list of what exists — a list of what this project's work actually needs.
+**What to install and when is in [`docs/agents/toolchain.md`](docs/agents/toolchain.md)** — install
+a server when the work needs it, never in advance, and keep the total under five.
 
 | When you are | Use | Why it matters here |
 |---|---|---|

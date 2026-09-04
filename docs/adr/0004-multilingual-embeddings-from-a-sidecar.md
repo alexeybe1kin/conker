@@ -35,6 +35,13 @@ failing outright.
 
 The model is **configuration, not code**, shipped with those presets.
 
+**Served by Ollama.** One command downloads and serves the model with automatic hardware
+optimisation — no config files, no Docker required — and `Qwen3-Embedding-0.6B` is Ollama-native.
+The trade is throughput and batching control, which do not matter for one person's memory on one
+box, and the install story has to stay kind to someone who does not write code. Hugging Face **TEI**
+is the upgrade path if volume ever justifies it; the sidecar contract makes that a deployment change
+rather than a rewrite. See [`../agents/toolchain.md`](../agents/toolchain.md).
+
 **A sidecar, not an import.** A separate service with an HTTP interface, called by MemoryGate. It
 keeps MemoryGate's image small and its startup fast, makes the embedding provider swappable without
 touching MemoryGate, and adds one more module of the same shape rather than a special case.
