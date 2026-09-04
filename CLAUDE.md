@@ -137,6 +137,24 @@ one, that is the bug.
 Branch per unit of work, named `<type>/<subject>`. `main` stays green. Commit messages say **why**,
 not what the diff already shows. Never skip hooks.
 
+### Leaving a session
+
+The ticket is the working memory. This project deliberately has no separate memory-bank file — the
+tracker, the ADRs and `CONTEXT.md` already hold what one would, and they are versioned and
+reviewable where a file an agent rewrites is not.
+
+What the tracker does **not** hold by itself is what you were in the middle of. So:
+
+- **Claim before you start.** Assign the ticket to yourself. An open, unassigned ticket means nobody
+  is on it; leaving one assigned and silent is worse than not claiming it.
+- **Before you stop, comment what a stranger would need**: what is done, what is half-done and
+  where, anything you learned that contradicts a doc, and the next concrete step. Not a diary — the
+  four facts.
+- **Unclaim if you are not coming back.** Unassign yourself so the ticket returns to the frontier.
+- **If you learned something durable**, it does not belong in a ticket comment. A term goes in
+  `CONTEXT.md`, a decision becomes an ADR, a fact about the world goes in `docs/research/`.
+  Ticket comments are for the work; the repository is for what outlives it.
+
 ### When you disagree with a decision
 
 The ADRs are decisions, not scripture — but they were expensive, and each records what it cost.
