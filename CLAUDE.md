@@ -2,12 +2,20 @@
 
 ## What this is
 
-A self-hosted personal AI companion and control plane. **The product has no name yet** —
-`companion` is a working codename and the repo will be renamed once naming is decided.
+**Conker** — a self-hosted personal AI companion and control plane. `Conker` is both the
+product and the default name of the Companion itself; both are owner-changeable.
 
-This is a **clean-slate rebuild**. A prior prototype existed under a different brand; only
-its *ideas* were carried forward. No code, architecture, infrastructure, or naming from it
-is inherited or authoritative.
+**The foundation is three built, running, public services** — MemoryGate, ToolGate and
+SystemGate (`belka0fficial`). They are inherited as working assets but **not frozen**: where a
+real architectural problem is found, fixing or replacing a component is in scope. A fourth,
+**Pi**, is being built in-house to run agent turns, sessions, jobs and model routing.
+
+The **clean-slate rule applies to `agentgate`** — an abandoned earlier prototype under a
+different brand. Nothing from it is inherited or authoritative; it is reference only.
+
+**Quality is the deliverable.** This repo is meant to be published. A stranger must be able to
+fork it, run it, understand it, and be glad they did — clean, modular, documented, organised.
+No slop. This outranks speed.
 
 ## Status: planning, not building
 
@@ -15,17 +23,31 @@ Nothing is being implemented yet. The project is being charted with the `wayfind
 a map of decision tickets on the issue tracker, resolved one at a time until the route is
 clear. Do not write implementation code until the map says the way is clear.
 
+**Order of work: architecture and plan → roadmap → build.**
+
+**There are no product versions.** The system ships as a sequence of **roadmap checkpoints**.
+Everything in the idea archive is eventually built; the roadmap decides order, never inclusion.
+"Later" never means "cut". Older tickets that say `v1` mean *the first checkpoints*, and `v2`
+means *a later checkpoint* — they predate this framing and their substance still stands.
+
+**The architecture must hold the whole system.** Every decision is tested against the end state —
+voice, video, avatar, teams, flows, spatial presence, the eight domain products — before it is
+recorded. A decision that only works for the early checkpoints is not finished.
+
 ## Source of truth
 
 Read in this order:
 
-1. Resolved wayfinder decision tickets (the map's "Decisions so far").
-2. [`docs/concept/vision.md`](docs/concept/vision.md) — the one-sentence idea, the
-   experience, the four boundaries, the ownership rule.
-3. [`docs/concept/features.md`](docs/concept/features.md) — complete inventory of every
+1. Resolved wayfinder decision tickets (the map's "Decisions so far") and the map's Notes.
+2. [`docs/concept/the-idea.md`](docs/concept/the-idea.md) — **primary.** The idea, and what
+   already exists. Supersedes the three notes below wherever they disagree.
+3. [`docs/concept/vision.md`](docs/concept/vision.md) — earlier notes: the experience, the
+   four boundaries, the ownership rule. Partly superseded; header says what was corrected.
+4. [`docs/concept/features.md`](docs/concept/features.md) — complete inventory of every
    feature idea. Unordered, uncommitted, unprioritised.
-4. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over,
+5. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over,
    all open to challenge.
+6. [`docs/research/`](docs/research/) — verified findings about the gates and about prior art.
 
 The concept docs are **raw material, not requirements**. An idea in `features.md` becomes
 a requirement only when a decision ticket resolves it into one.

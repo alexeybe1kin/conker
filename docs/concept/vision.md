@@ -1,19 +1,30 @@
 # Vision
 
-> **Status: pure concept. Nothing here is an implementation commitment.**
-> Carried over as ideas only from a previous prototype. No code, architecture, or
-> infrastructure decisions survive from it. The product name is not yet chosen.
+> **Status: early concept notes, partly superseded.**
+> Written before [`the-idea.md`](the-idea.md), which is now the primary source. Where the two
+> disagree, `the-idea.md` wins, and resolved decision tickets win over both.
+>
+> Two things on this page were wrong and are corrected below: the product **is** named
+> (**Conker**), and MemoryGate / ToolGate / SystemGate **are** carried forward as the built
+> foundation. The clean-slate rule applies to the abandoned `agentgate` prototype only.
 
 ---
 
 ## The idea in one sentence
 
-A **self-hosted personal AI companion and control plane** that connects one person to
+**Conker** is a **self-hosted personal AI companion and control plane** that connects one person to
 their digital life: applications, agents, tools, memories, and ongoing work.
 
 Forkable, customizable, installable by other people on their own machines — especially
 clean Ubuntu servers. Not a chatbot, not a dashboard, not a memory database, not a pile
 of disconnected agents.
+
+**Single-tenant per install, distributable to many installers.** These are not in tension, and
+earlier notes read as if they were. One Conker serves one owner. Anyone may run their own.
+The repository is meant to be public, forkable and pleasant to use — see the quality bar on
+the map.
+
+`Conker` is also the default name of the Companion itself. Both are owner-changeable.
 
 ## The experience
 
@@ -52,8 +63,11 @@ The whole architecture reduces to four:
 The product should mostly *feel* like one Companion. These boundaries are architecture and
 security concepts, not products the owner manages.
 
-> Naming note: the prior prototype called these MemoryGate, ToolGate, and SystemGate.
-> Those names are **not carried forward** — naming is an open decision.
+> **Corrected.** An earlier draft said these names were "not carried forward". That was wrong.
+> **MemoryGate, ToolGate and SystemGate are built, running, public, and are Conker's foundation.**
+> They are inherited as working assets but **not frozen**: where a real architectural problem is
+> found, fixing or replacing the component is in scope. A fourth component, **Pi**, is being built
+> in-house to run agent turns, sessions, jobs and model routing.
 
 ## The ownership rule
 
