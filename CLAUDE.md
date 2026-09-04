@@ -65,7 +65,7 @@ a requirement only when a decision ticket resolves it into one.
 
 ### Issue tracker
 
-Issues live as GitHub issues in `alexeybe1kin/companion`, driven via the `gh` CLI;
+Issues live as GitHub issues in `alexeybe1kin/conker`, driven via the `gh` CLI;
 wayfinder maps and tickets use sub-issues and native issue dependencies.
 See `docs/agents/issue-tracker.md`.
 

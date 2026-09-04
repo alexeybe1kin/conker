@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues in [`alexeybe1kin/companion`](https://github.com/alexeybe1kin/companion). Use the `gh` CLI for all operations.
+Issues and specs for this repo live as GitHub issues in [`alexeybe1kin/conker`](https://github.com/alexeybe1kin/conker). Use the `gh` CLI for all operations.
 
 ## Conventions
 

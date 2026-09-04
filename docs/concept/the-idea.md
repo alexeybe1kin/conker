@@ -343,7 +343,7 @@ domain contract plus a final ownership rule for classifying new ideas.
 ### This repository
 
 ```text
-dev/companion/
+dev/companion/          (local dir; repo is alexeybe1kin/conker)
 ├── CLAUDE.md
 ├── docs/
 │   ├── concept/
@@ -361,6 +361,7 @@ dev/companion/
 
 - Self-hosted Ubuntu server, running 24/7.
 - Tailscale for device access.
-- `github.com/alexeybe1kin/companion` — this repository, private.
+- `github.com/alexeybe1kin/conker` — this repository, private. Renamed from `companion`;
+  GitHub redirects the old URL.
 - A previous prototype at `github.com/belka0fficial/agentgate` and locally in
   `C:\Users\The1a\agentgate-work`. Abandoned; kept as reference only.
