@@ -21,6 +21,12 @@ Where these conflict, the earlier rule wins. Usefulness never outranks security.
 
 ## C1 — It talks, and it remembers
 
+> **Tracked as [issue #19](https://github.com/alexeybe1kin/conker/issues/19)** with fifteen work
+> tickets as sub-issues, wired with native dependencies. The open, unblocked children are what is
+> takeable right now — claim one by assigning yourself before starting. This document is the
+> narrative; the tracker is the queue.
+
+
 **The experience:** one command on a clean server, open a link, enter your name and password, name
 and shape your companion, and start talking. It remembers you and previous conversations.
 
