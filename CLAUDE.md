@@ -78,7 +78,87 @@ the resolved tickets on the issue tracker — the map's "Decisions so far" is th
   scratch output committed.
 - `main` is stable. Work happens on branches.
 
+## Engineering rules
+
+These exist because the quality bar is the deliverable. A stranger forks this repo and has to be
+glad they did — that is a property of the code, not of the README.
+
+### Definition of done
+
+A change is done when **all** of these are true. Not most.
+
+1. It works, and you have **run it** — not reasoned that it should work.
+2. Tests cover the behaviour, and they fail if the behaviour breaks.
+3. The module still satisfies its contract: `README.md` current, `/health` unchanged in shape,
+   `openapi.json` regenerated, `CHANGELOG.md` updated if the contract moved.
+4. No new raw hex value or font-family in application code — colour and type come from the design
+   system, always.
+5. Nothing left behind: no commented-out code, no `TODO` without an issue number, no debug prints,
+   no scratch files.
+
+### Testing
+
+Test the **boundary**, not the implementation. Every module's contract operations get tests; a test
+that breaks when you rename a private function is a liability, not coverage.
+
+Three things must always be tested because they are the things that silently rot:
+
+- **The degraded path.** Every contract can report degraded, and callers must handle it. A service
+  that only has a happy-path test will lie to the owner the first time a dependency is down.
+- **Approval binding.** An approval is consumed exactly once. Replays fail closed. Test the replay.
+- **Append-only history.** Nothing rewrites an earlier turn.
+
+Do not mock what you can run. The gates ship `docker-compose` for exactly this reason.
+
+### Code
+
+Python 3.11+, FastAPI, `ruff` for lint and format, type hints on anything crossing a module
+boundary. React with TypeScript for the dashboard. Match the surrounding file's style over any
+personal preference — a diff that reformats unrelated lines is a bad diff.
+
+Configuration precedence is the same everywhere: **environment → file → default**, documented.
+Errors share one shape across every service, so the dashboard renders failures uniformly.
+
+**Secure by default, or refuse to start.** A service with no key configured does not fall back to
+open; it exits with an error naming the exact fix. This rule already has one scar behind it — see
+[ADR-0005](docs/adr/0005-toolgate-is-the-only-action-path.md).
+
+### Truthful status applies to code
+
+`principles.md` §1 is not only about the UI. A function that cannot determine a value returns
+`unknown`, never a plausible default. A health check that cannot reach its dependency reports
+`degraded` with the reason, never `ok`. A cached value carries its age.
+
+Silent fallbacks are the failure this whole product exists to avoid. If you find yourself writing
+one, that is the bug.
+
+### Git
+
+Branch per unit of work, named `<type>/<subject>`. `main` stays green. Commit messages say **why**,
+not what the diff already shows. Never skip hooks.
+
+### When you disagree with a decision
+
+The ADRs are decisions, not scripture — but they were expensive, and each records what it cost.
+Contradicting one is allowed; doing it silently is not. Say which ADR, say why it is wrong, and
+write the replacement decision down before the code that assumes it.
+
 ## Agent skills
+
+### Reach for these
+
+Not a list of what exists — a list of what this project's work actually needs.
+
+| When you are | Use | Why it matters here |
+|---|---|---|
+| Writing anything that calls a model — Pi's turn loop, routing, caching, cost | **`claude-api`** | Model IDs, pricing, caching and tool-use shapes drift fast. Answering from memory produces code that is subtly wrong and expensive. Non-optional for Pi. |
+| Designing a screen or the onboarding tour | **`mobbin` MCP** + **`design`** | Mobbin searches real shipped app flows and screens — reference before invention. `design` produces an editable multi-artboard canvas to react to before any code exists. |
+| Unsure whether a state model or a flow feels right | **`prototype`** | Cheap, throwaway, answers the question. Much cheaper than discovering it in C4. |
+| A decision needs an outside fact | **`research`** | Findings land in `docs/research/` with citations. See what it produced about the gates and about Hermes. |
+| Code exists and is about to be merged | **`code-review`**, then **`security-review`** | The quality bar is the deliverable, and this product holds someone's whole life on their own server. |
+| Claiming a change works | **`run`** | Launch it and look. "Should work" is not done — see the definition of done above. |
+| Terminology is drifting | **`domain-modeling`** | `CONTEXT.md` is the vocabulary. Update it when a term resolves, do not batch it. |
+| Stress-testing a plan before committing | **`grilling`** | Every decision on this project went through it, which is why the ADRs have real trade-offs in them. |
 
 ### Issue tracker
 
