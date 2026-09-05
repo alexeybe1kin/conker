@@ -5,9 +5,10 @@
 **Conker** — a self-hosted personal AI companion and control plane. `Conker` is both the
 product and the default name of the Companion itself; both are owner-changeable.
 
-**The foundation is three built, running, public services** — MemoryGate, ToolGate and
-SystemGate (`belka0fficial`). They are inherited as working assets but **not frozen**: where a
-real architectural problem is found, fixing or replacing a component is in scope. A fourth,
+**The foundation is three built, running services** — MemoryGate, ToolGate and SystemGate, all
+under `alexeybe1kin`. They are inherited as working assets but **not frozen**: where a real
+architectural problem is found, fixing or replacing a component is in scope. They are **private
+until the blocking security fixes land** — see the C1 tickets — and go public after that. A fourth,
 **Pi**, is being built in-house to run agent turns, sessions, jobs and model routing.
 
 The **clean-slate rule applies to `agentgate`** — an abandoned earlier prototype under a

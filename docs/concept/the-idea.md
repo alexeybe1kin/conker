@@ -166,7 +166,8 @@ access · 3D model · 2D emotion pack (chibi style preferred) · voice — and m
 
 ## Built and running
 
-Three services, already built, public repositories under `belka0fficial`.
+Three services, already built, under `alexeybe1kin`. Private until their blocking security
+defects are fixed; public after that.
 
 ### MemoryGate
 
@@ -363,5 +364,6 @@ dev/companion/          (local dir; repo is alexeybe1kin/conker)
 - Tailscale for device access.
 - `github.com/alexeybe1kin/conker` — this repository, private. Renamed from `companion`;
   GitHub redirects the old URL.
-- A previous prototype at `github.com/belka0fficial/agentgate` and locally in
-  `C:\Users\The1a\agentgate-work`. Abandoned; kept as reference only.
+- A previous prototype, `agentgate`, kept locally in
+  `C:\Users\The1a\agentgate-work`. Abandoned; reference only,
+  not carried forward and not published.
