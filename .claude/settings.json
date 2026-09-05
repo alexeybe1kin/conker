@@ -74,8 +74,12 @@
       "Bash(docker volume rm:*)",
       "Read(./.env)",
       "Read(./**/.env)",
-      "Read(./**/.env.*)",
-      "Read(./**/secrets/**)"
+      "Read(./**/.env.local)",
+      "Read(./**/.env.development)",
+      "Read(./**/.env.production)",
+      "Read(./**/secrets/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
     ]
   }
 }
