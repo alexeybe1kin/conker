@@ -33,8 +33,13 @@ build-phase ones matter most:
 
 ### Context7 — up-to-date library documentation
 
+**Installed.** On Windows the documented routes do not work: `npx -y @upstash/context7-mcp` times
+out on the 30-second health check while npm downloads the package, and the `.cmd` shim path is
+mangled by MSYS. What connects:
+
 ```
-npx ctx7 setup --claude
+npm install -g @upstash/context7-mcp
+claude mcp add --scope user context7 -- node <npm-global>/node_modules/@upstash/context7-mcp/dist/index.js
 ```
 
 The highest-value MCP for this project. It serves **version-specific documentation pulled from
