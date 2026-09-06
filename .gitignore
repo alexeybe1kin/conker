@@ -1,11 +1,22 @@
+# Secrets. Every value in here is a key; the installer writes it at 0600.
 .env
-.env.*
-!.env.example
-node_modules/
-dist/
-build/
+.env.local
+*.tmp.*
+
+# Where the owner's data lands if they accept the defaults.
+/conker-backups/
+/data/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
 .venv/
+venv/
+
+# Editors and platforms
 .DS_Store
-.scratch/**/draft-*
+Thumbs.db
+.idea/
+*.swp

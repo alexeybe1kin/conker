@@ -1,0 +1,52 @@
+name: CI
+
+# The installer's promises are testable, so they are tested. A rule nobody
+# checks is a rule that decays — the same reason each module's contract is
+# enforced in its own CI rather than described in its README.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  installer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install --quiet pytest
+
+      - name: Shell syntax
+        # Catches an unterminated quote before it becomes a broken install on
+        # someone else's machine.
+        run: |
+          bash -n install.sh
+          bash -n conker
+
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck --severity=warning install.sh conker
+
+      - name: Line endings must be LF
+        # A CRLF in a shell script is a "bad interpreter" failure that nothing
+        # on a Windows machine surfaces before it reaches a server.
+        run: |
+          if git grep -Il $'\r' -- . ; then
+            echo "CRLF found in tracked files; .gitattributes should normalise these." >&2
+            exit 1
+          fi
+          echo "all tracked text files are LF"
+
+      - name: The installer keeps its promises
+        # Docker is present on this runner, and the suite only ever uses its
+        # read-only verbs — `info` and `compose config`. Nothing is pulled and
+        # nothing is started.
+        run: python -m pytest tests/ -q

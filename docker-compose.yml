@@ -1,0 +1,216 @@
+name: conker
+
+# The whole system, in one file, from pinned images.
+#
+# Nothing here is built from source. Each module ships its own image from its
+# own repository, so a gate stays independently forkable and runnable — see
+# ADR-0003. This file is how they compose into one product.
+#
+# **Every port binds to 127.0.0.1.** There is no public-internet path at all,
+# by construction rather than by firewall. Reaching Conker from another device
+# is Tailscale's job, offered by `conker tailscale` and never assumed.
+#
+# Versions come from versions.env, secrets from .env. Neither is edited by
+# hand: `./install.sh` writes .env, and `conker update` moves versions.env.
+
+x-service: &service
+  restart: unless-stopped
+  networks: [conker_net]
+
+services:
+
+  # --- the runtime ----------------------------------------------------------
+  # The only service the browser ever talks to. Everything the owner sees
+  # passes through here, which is what keeps provider keys, admin keys and host
+  # paths off the client.
+  pi:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
+    container_name: conker-pi
+    ports:
+      - "127.0.0.1:${CONKER_PORT:-8050}:8050"
+    environment:
+      PI_ADMIN_KEY: ${CONKER_ADMIN_KEY:?run ./install.sh - .env is missing or incomplete}
+      PI_DB_PATH: /data/pi.db
+      PI_OLLAMA_URL: http://ollama:11434
+      PI_MODEL: ${CONKER_LOCAL_MODEL:-qwen3:4b}
+      PI_TOOLGATE_URL: http://toolgate-api:8010
+      # Issued by ToolGate after it is healthy, then written back to .env by the
+      # installer. Empty is a working install, not a broken one: Conker still
+      # talks and still remembers, and /health says `not_configured`.
+      PI_TOOLGATE_KEY: ${PI_TOOLGATE_KEY:-}
+      PI_OPENROUTER_KEY: ${OPENROUTER_KEY:-}
+      PI_SYSTEM_PROMPT: ${CONKER_SYSTEM_PROMPT:-}
+    volumes:
+      # The transcript. MemoryGate's evidence cites message ids from this
+      # database, so losing it orphans every citation.
+      - pi_data:/data
+    depends_on: [ollama]
+
+  # --- the action boundary --------------------------------------------------
+  toolgate:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/toolgate:${TOOLGATE_VERSION}
+    container_name: toolgate-api
+    ports:
+      - "127.0.0.1:8010:8010"
+    environment:
+      TOOLGATE_ADMIN_KEY: ${TOOLGATE_ADMIN_KEY:?run ./install.sh}
+      # ToolGate defaults its data directory to its own package directory,
+      # which inside an image means the container filesystem - so every tool,
+      # secret and audit entry would vanish on the next `docker compose down`.
+      # Pointed at the volume instead.
+      TOOLGATE_DATA_DIR: /var/lib/toolgate
+      TOOLGATE_VAULT_KEY_FILE: /var/lib/toolgate/vault.key
+      TOOLGATE_VAULT_SALT: ${TOOLGATE_VAULT_SALT:?run ./install.sh}
+      TOOLGATE_CALLBACK_SECRET: ${TOOLGATE_CALLBACK_SECRET:?run ./install.sh}
+      MEMORYGATE_URL: http://memorygate-api:8020
+      MEMORYGATE_READ_KEY: ${MEMORYGATE_READ_KEY:?run ./install.sh}
+      # ToolGate mints Pi's execution key itself on first start, so there is no
+      # provisioning step to get half-done. Re-running the installer with the
+      # same value is a no-op rather than a second key.
+      TOOLGATE_BOOTSTRAP_EXECUTION_KEY: ${PI_TOOLGATE_KEY:?run ./install.sh}
+      TOOLGATE_BOOTSTRAP_SCOPES: ${PI_TOOLGATE_SCOPES:-tool:*,automation:*}
+    volumes:
+      # The control plane, the vault and its key. The key sharing this volume
+      # is deliberate and narrow: the volume never leaves the machine, whereas
+      # the *image* must never carry either - which it did, until v0.2.2.
+      - toolgate_data:/var/lib/toolgate
+    depends_on: [memorygate, searxng]
+
+  searxng:
+    <<: *service
+    image: ${SEARXNG_IMAGE}
+    container_name: toolgate-searxng
+    networks:
+      conker_net:
+        aliases: [toolgate-searxng]
+
+  # --- the memory boundary --------------------------------------------------
+  memorygate:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/memorygate:${MEMORYGATE_VERSION}
+    container_name: memorygate-api
+    ports:
+      - "127.0.0.1:8020:8020"
+    environment:
+      MEMORYGATE_ADMIN_KEY: ${MEMORYGATE_ADMIN_KEY:?run ./install.sh}
+      # Provisions the read key ToolGate uses. One secret, two names, because
+      # the two services call it different things.
+      MEMORYGATE_BOOTSTRAP_READ_KEY: ${MEMORYGATE_READ_KEY:?run ./install.sh}
+      DATABASE_URL: postgresql+psycopg://memorygate:${MEMORYGATE_DB_PASSWORD:?run ./install.sh}@postgres:5432/memorygate
+      QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_URL: http://embeddings-api:8030
+      EMBEDDINGS_KEY: ${EMBEDDINGS_KEY:?run ./install.sh}
+      MEMORYGATE_BOOTSTRAP_AGENT_ID: agent_pi_operator
+      # Never `*`. The dashboard is served by Pi and is the only browser origin
+      # that has any business here.
+      MEMORYGATE_CORS_ORIGINS: http://127.0.0.1:${CONKER_PORT:-8050}
+    volumes:
+      # Bound to a real host directory rather than a named volume, so a backup
+      # the owner cannot find is not the kind of backup this ships.
+      - ${CONKER_BACKUP_DIR}/memorygate:/data/backups
+    depends_on: [postgres, qdrant, embeddings]
+    networks:
+      conker_net:
+        aliases: [memorygate-api]
+
+  postgres:
+    <<: *service
+    image: ${POSTGRES_IMAGE}
+    container_name: memorygate-postgres
+    environment:
+      POSTGRES_USER: memorygate
+      POSTGRES_PASSWORD: ${MEMORYGATE_DB_PASSWORD:?run ./install.sh}
+      POSTGRES_DB: memorygate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memorygate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    <<: *service
+    image: ${QDRANT_IMAGE}
+    container_name: memorygate-qdrant
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # --- embeddings -----------------------------------------------------------
+  embeddings:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/embeddings:${EMBEDDINGS_VERSION}
+    container_name: embeddings-api
+    ports:
+      - "127.0.0.1:8030:8030"
+    environment:
+      EMBEDDINGS_ADMIN_KEY: ${EMBEDDINGS_KEY:?run ./install.sh}
+      EMBEDDINGS_OLLAMA_URL: http://ollama:11434
+      # Model and dimension are a matched pair - the service refuses to start if
+      # they disagree - so the installer always writes both together. The
+      # low-resource preset is a different model *and* a different width.
+      EMBEDDINGS_MODEL: ${CONKER_EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+      EMBEDDINGS_DIMENSION: ${CONKER_EMBEDDING_DIMENSION:-1024}
+    depends_on: [ollama]
+    networks:
+      conker_net:
+        aliases: [embeddings-api]
+
+  # --- local models ---------------------------------------------------------
+  # One Ollama, two consumers. Pi thinks with it and Embeddings vectorises with
+  # it; running two would download and store every model twice for no benefit.
+  ollama:
+    <<: *service
+    image: ${OLLAMA_IMAGE}
+    container_name: conker-ollama
+    networks:
+      conker_net:
+        aliases:
+          # ToolGate's planner defaults to this name, from the days when each
+          # gate ran its own Ollama. One server answering to both names is
+          # cheaper than a settings migration, and costs nothing.
+          - memorygate-ollama
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "65536"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # --- observation ----------------------------------------------------------
+  # Read-only telemetry about the host. Reading is the entire capability; there
+  # is no write path here to reach for.
+  systemgate:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/systemgate:${SYSTEMGATE_VERSION}
+    container_name: systemgate-api
+    # Share the host's UTS namespace so /vitals reports the host's name rather
+    # than a container id. Bind-mounting /proc is not enough: the kernel
+    # resolves the hostname from the reading process's namespace, not the mount.
+    uts: host
+    ports:
+      - "127.0.0.1:8040:8040"
+    environment:
+      SYSTEMGATE_ADMIN_KEY: ${SYSTEMGATE_ADMIN_KEY:?run ./install.sh}
+      # psutil honours no environment variable for this, so the name is ours and
+      # the assignment happens in SystemGate's own code.
+      SYSTEMGATE_PROCFS_PATH: /host/proc
+      SYSTEMGATE_DISK_PATH: /host/root
+    volumes:
+      - systemgate_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /:/host/root:ro
+      - ${CONKER_BACKUP_DIR}:/backups:ro
+
+volumes:
+  pi_data:
+  toolgate_data:
+  postgres_data:
+  qdrant_data:
+  ollama_data:
+  systemgate_data:
+
+networks:
+  conker_net:
+    name: conker_net

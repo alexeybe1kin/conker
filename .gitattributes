@@ -1,0 +1,10 @@
+# These run on Linux servers. A CRLF in a shell script is a "bad interpreter"
+# failure that nothing on a Windows machine surfaces before it reaches one.
+* text=auto eol=lf
+
+install.sh text eol=lf
+conker     text eol=lf
+*.sh       text eol=lf
+*.yml      text eol=lf
+*.py       text eol=lf
+*.md       text eol=lf

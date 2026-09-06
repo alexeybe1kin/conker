@@ -157,9 +157,25 @@ It never asks for anything it can work out itself, never asks a person to invent
 reports success for a service it did not reach, and on failure names what broke and the exact next
 step. It is idempotent and upgradeable.
 
-**Distribution:** this repository is the umbrella — installer, compose, docs, Pi, dashboard, design
-system. The gates are consumed as pinned GHCR images from their own repositories, so each stays
-independently forkable and runnable.
+**Distribution:** this repository is the umbrella — installer, compose, docs, dashboard, design
+system. Every module, **Pi included**, is consumed as a pinned GHCR image from its own repository,
+so each stays independently forkable and runnable.
+
+> Pi was originally planned to live inside this repository. It ended up in
+> [`alexeybe1kin/pi`](https://github.com/alexeybe1kin/pi) instead, because the moment it had a
+> `/health` contract, a changelog and a published image it was a module like any other — and a
+> single rule ("every module ships its own image, the umbrella composes them") is easier to hold
+> than a rule with one exception in it. The installer treats all five identically as a result.
+
+Two further things the installer settled, both visible in
+[`docker-compose.yml`](../docker-compose.yml):
+
+- **One Ollama, shared.** Pi thinks with it and Embeddings vectorises with it. The gates' own
+  compose files each ran their own, which downloads and stores every model twice for no benefit.
+- **The compose file is committed, not generated.** The installer writes `.env` and nothing else;
+  versions live in [`versions.env`](../versions.env) and resolve into the compose file. Pinning is
+  therefore one legible diff rather than a file that only exists after a script has run — and what
+  a stranger reads in the repository is exactly what runs.
 
 **Tailscale is offered, never assumed.** Default binds to localhost and the local network. There is
 no public-internet path at all, and the docs say why.
