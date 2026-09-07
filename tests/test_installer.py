@@ -279,6 +279,47 @@ def test_every_image_is_pinned(install):
         assert "@sha256:" in image or re.search(r":v?\d", image), f"{image} is not pinned"
 
 
+def resolved_images(install) -> list[str]:
+    config = subprocess.run(
+        ["docker", "compose", "--env-file", str(install.dir / "versions.env"),
+         "--env-file", str(install.env_file), "-f", str(install.dir / "docker-compose.yml"),
+         "config"],
+        capture_output=True, text=True, cwd=str(install.dir),
+    ).stdout
+    return re.findall(r"^\s*image:\s*(\S+)", config, re.M)
+
+
+@needs_docker
+@pytest.mark.skipif(os.environ.get("CONKER_OFFLINE_TESTS") == "1",
+                    reason="asks the registry; set CONKER_OFFLINE_TESTS=1 to skip")
+def test_every_pinned_image_actually_exists(install):
+    """A pin that resolves to nothing is worse than no pin.
+
+    The git tag is `v0.2.2`; the image tag the publish workflow produces is
+    `0.2.2`, because docker/metadata-action strips the prefix. Pinning the `v`
+    form passed every other test here - the compose file was valid, nothing was
+    `latest`, everything was bound to loopback - and then 404'd on the first
+    real install. Local builds tagged by hand had masked it completely.
+
+    So this asks the registry, which is the only thing that actually knows.
+    """
+    install("--yes", "--dry-run")
+    images = resolved_images(install)
+    assert images, "no images in the resolved config"
+
+    missing = [
+        image for image in images
+        if subprocess.run(["docker", "manifest", "inspect", image],
+                          capture_output=True).returncode != 0
+    ]
+    assert not missing, (
+        "these pinned images do not exist in the registry:\n  "
+        + "\n  ".join(missing)
+        + "\n\nCheck versions.env against the tags the publish workflow really "
+          "produces - it strips a leading `v`."
+    )
+
+
 @needs_docker
 def test_nothing_is_exposed_beyond_this_machine(install):
     """There is no public-internet path at all, by construction. A bind on
