@@ -20,3 +20,7 @@ venv/
 Thumbs.db
 .idea/
 *.swp
+
+# Agent skills installed by `skills add` — symlinked into .claude/ per client.
+# The skill sources are committed; the per-client symlinks are not.
+.claude/skills/
