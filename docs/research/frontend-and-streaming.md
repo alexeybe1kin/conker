@@ -62,13 +62,33 @@ Tailwind v4 moved configuration into CSS with `@theme`, and tokens become **real
 browser and other CSS can read. That fits [ADR-0003](../adr/0003-the-gates-go-headless.md)'s
 requirement that tokens are defined once and consumed everywhere.
 
-**The trap, worth writing down before it bites:** `@theme inline` bakes values in at build time and
-**breaks runtime theme switching**. The working pattern is two-stage — raw channel values declared
-in `:root` and the dark override, mapped by a **non-inline** `@theme`.
+> [!WARNING]
+> **This section was wrong and has been corrected. See
+> [`shadcn-and-the-token-contract.md`](shadcn-and-the-token-contract.md) §1.**
+>
+> It named `@theme inline` as the trap. `inline` is in fact **required** for the case described,
+> and the non-inline form is what breaks the theme toggle. The original text is kept below, struck
+> through, because a research file that quietly rewrites itself cannot be trusted either.
 
-This would have been a silent failure: the build succeeds, the tokens look right, and the theme
-toggle simply does nothing. The module contract requires both themes to work, so this is a
-correctness requirement rather than a style note.
+~~**The trap, worth writing down before it bites:** `@theme inline` bakes values in at build time
+and **breaks runtime theme switching**. The working pattern is two-stage — raw channel values
+declared in `:root` and the dark override, mapped by a **non-inline** `@theme`.~~
+
+**What is actually true**, from Tailwind's own documentation and confirmed by compiling both forms:
+a theme variable that *references another variable* must be declared with `@theme inline`, or the
+reference is resolved once at `:root` and every element below inherits that computed value — so the
+`.dark` override never applies.
+
+```css
+/* correct */
+:root { --brand: oklch(0.98 0 0); }
+.dark { --brand: oklch(0.15 0 0); }
+@theme inline { --color-brand: var(--brand); }   /* → .bg-brand { background: var(--brand) } */
+```
+
+The rest of the original entry stands: this fails **silently** — the build succeeds, the tokens
+look right, and the toggle does nothing — and the module contract requires both themes to work, so
+it is a correctness requirement rather than a style note. Only the culprit was inverted.
 
 ---
 
