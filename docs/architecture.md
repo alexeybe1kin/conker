@@ -192,6 +192,8 @@ product, running on real screens with real data — anything illustrative is lab
 
 ## 6. Screens
 
+> Detail, routing and per-screen responsibilities: [`screens.md`](screens.md).
+
 Nine, ordered by how often they are needed.
 
 **The daily loop** — Chat · **Proposals** · Approvals
