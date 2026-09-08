@@ -47,23 +47,26 @@ works. Nothing in this repository designs one.
 
 **Everything needed to work on Conker is in this repository.** Read in this order:
 
-1. [`CONTEXT.md`](CONTEXT.md) — the vocabulary. Use these words; they are load-bearing.
-2. [`docs/architecture.md`](docs/architecture.md) — how the system is shaped. Start here.
-3. [`docs/roadmap.md`](docs/roadmap.md) — what gets built, in what order. **C1 is next.**
-4. [`docs/adr/`](docs/adr/) — why each hard-to-reverse decision was made. Read the ones that touch
+1. [`docs/philosophy.md`](docs/philosophy.md) — what Conker is for, what it must never become,
+   and how to tell whether it is working. Everything below answers to this.
+2. [`CONTEXT.md`](CONTEXT.md) — the vocabulary. Use these words; they are load-bearing.
+3. [`docs/architecture.md`](docs/architecture.md) — how the system is shaped.
+4. [`docs/screens.md`](docs/screens.md) — the surface: navigation, routing, what each screen is for.
+5. [`docs/approvals.md`](docs/approvals.md) — the hardest screen, thought through on its own.
+6. [`docs/roadmap.md`](docs/roadmap.md) — what gets built, in what order. **C1 is next.**
+7. [`docs/adr/`](docs/adr/) — why each hard-to-reverse decision was made. Read the ones that touch
    what you are about to change; contradicting one is allowed, doing it silently is not.
-5. [`docs/research/`](docs/research/) — verified findings about the gates and about prior art,
-   with `path:line` citations. Facts, not opinions.
+8. [`docs/research/`](docs/research/) — verified findings, with citations. Facts, not opinions.
 
 Then the concept notes, which are **raw material, not requirements**:
 
-6. [`docs/concept/the-idea.md`](docs/concept/the-idea.md) — the idea and what already exists.
-7. [`docs/concept/vision.md`](docs/concept/vision.md) — earlier notes, partly superseded; its
-   header says what was corrected.
-8. [`docs/concept/features.md`](docs/concept/features.md) — the complete inventory of feature
-   ideas. Unordered, uncommitted, unprioritised.
-9. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over, all
-   open to challenge.
+9. [`docs/concept/the-idea.md`](docs/concept/the-idea.md) — the origin. Part 1 is superseded by
+   `philosophy.md`; Part 2 is the inventory of what already existed.
+10. [`docs/concept/vision.md`](docs/concept/vision.md) — earlier notes, partly superseded.
+11. [`docs/concept/features.md`](docs/concept/features.md) — the complete inventory of feature
+    ideas. Unordered, uncommitted, unprioritised.
+12. [`docs/concept/principles.md`](docs/concept/principles.md) — constraints carried over, all
+    open to challenge.
 
 An idea in `features.md` becomes a requirement only when a decision resolves it into one.
 

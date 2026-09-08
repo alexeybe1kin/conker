@@ -2,6 +2,13 @@
 
 The idea, and what already exists.
 
+> **Part 1 is superseded by [`../philosophy.md`](../philosophy.md).**
+> It remains here as the origin of the project and is still worth reading as that. But it had holes
+> big enough to build the wrong product through — no accounting for the attention automation costs,
+> no distinction between repetition and waste, no way for memory to be wrong about you and recover,
+> and a safety model that only works while the product is weak. `philosophy.md` names each of those
+> and answers them. Where the two disagree, that one is current.
+
 ---
 
 # Part 1 — The idea
