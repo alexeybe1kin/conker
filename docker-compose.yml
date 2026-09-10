@@ -70,7 +70,12 @@ services:
       # provisioning step to get half-done. Re-running the installer with the
       # same value is a no-op rather than a second key.
       TOOLGATE_BOOTSTRAP_EXECUTION_KEY: ${PI_TOOLGATE_KEY:?run ./install.sh}
-      TOOLGATE_BOOTSTRAP_SCOPES: ${PI_TOOLGATE_SCOPES:-tool:*,automation:*}
+      # No wildcard default. This line seeds a key that does not exist yet, and
+      # ToolGate no longer reconciles an existing key to configuration - so a
+      # scope the owner narrowed, or a key they revoked, survives a restart.
+      # It used to grant tool:*,automation:* on every boot, which quietly undid
+      # exactly the decisions the owner had most deliberately made.
+      TOOLGATE_BOOTSTRAP_SCOPES: ${PI_TOOLGATE_SCOPES:-}
     volumes:
       # The control plane, the vault and its key. The key sharing this volume
       # is deliberate and narrow: the volume never leaves the machine, whereas
