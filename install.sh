@@ -521,6 +521,23 @@ pull_models() {
     fi
 }
 
+# The top-level status, and never a nested one.
+#
+# `sed 's/.*"status".../'` looks right and is wrong: `.*` is greedy, so it walks
+# to the LAST "status" in the body - whichever check happens to appear last. A
+# Pi reporting `degraded` because its model was unreachable displayed as `ok`,
+# because `action_boundary` came last and said so.
+#
+# The health contract puts the service-level status before `checks`, so the
+# first match is both correct and the honest reading. Getting this wrong in the
+# status command is the worst possible place for it: the owner is told
+# everything is fine at exactly the moment they need to know it is not.
+top_level_status() {
+    grep -o '"status"[[:space:]]*:[[:space:]]*"[a-z_]*"' \
+        | head -1 \
+        | sed 's/.*"\([a-z_]*\)"$/\1/'
+}
+
 # Ask each service directly. A container that is "running" has proved nothing:
 # reporting success for a service nobody reached is the one thing this must
 # never do.
@@ -549,7 +566,7 @@ wait_for_health() {
             DEGRADED+=("${labels[$i]} never answered on port $port")
             continue
         fi
-        status=$(printf '%s' "$body" | sed -n 's/.*"status"[[:space:]]*:[[:space:]]*"\([a-z_]*\)".*/\1/p' | head -1)
+        status=$(printf '%s' "$body" | top_level_status)
         case "$status" in
             ok) good "${labels[$i]}" ;;
             degraded)

@@ -366,3 +366,45 @@ def test_an_unknown_option_says_so_and_stops(install):
     assert result.returncode != 0
     assert "--wat" in result.stderr
     assert "--help" in result.stderr
+
+
+# --- truthful status ---------------------------------------------------------
+
+def test_the_status_parser_reads_the_service_not_its_last_check():
+    """`sed 's/.*"status".../'` looks right and is wrong: `.*` is greedy, so it
+    walks to the LAST "status" in the body. A Pi reporting `degraded` because
+    its model was unreachable displayed as `ok`, because `action_boundary`
+    came last and said so.
+
+    Found by an independent audit. Getting this wrong in the status command is
+    the worst possible place for it - the owner is told everything is fine at
+    exactly the moment they need to know it is not.
+    """
+    degraded = ('{"service":"pi","status":"degraded","degraded":["local_provider"],'
+                '"checks":{"store":{"status":"ok"},'
+                '"local_provider":{"status":"unavailable"},'
+                '"action_boundary":{"status":"ok"}}}')
+
+    for script in ("conker", "install.sh"):
+        body = (ROOT / script).read_text()
+        # Both halves matter: the helper must exist AND be what the status
+        # line actually calls. An earlier version of this test asserted only
+        # that the helper existed, and stayed green when the call site was
+        # reverted to the greedy sed - the same "correct in the part, unwired
+        # in the whole" mistake as the bug it guards.
+        calls = [line for line in body.splitlines() if "status=$(printf" in line]
+        assert calls, f"{script}: no status assignment found"
+        for line in calls:
+            assert "top_level_status" in line, (
+                f"{script} still parses status inline: {line.strip()}"
+            )
+
+        helper = body.split("top_level_status() {", 1)[1].split("}", 1)[0]
+        result = subprocess.run(
+            ["bash", "-c", f"top_level_status() {{{helper}}}\nprintf '%s' \"$1\" | top_level_status",
+             "_", degraded],
+            capture_output=True, text=True,
+        )
+        assert result.stdout.strip() == "degraded", (
+            f"{script} reported {result.stdout.strip()!r} for a degraded service"
+        )
