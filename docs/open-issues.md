@@ -42,8 +42,8 @@ is nearly free and stays · the model is 4–5× the entire rest of the stack.
 
 | # | | |
 |---|---|---|
-| **B1** | **Backup omits ToolGate entirely** | `conker backup` saves Postgres, `pi.db` and `.env` — **not the ToolGate volume**, which holds the vault, its key, every approval and every execution record. Restoring from it leaves every stored secret permanently unreadable. Own bug, and the worst one open. |
-| **B2** | **Restore does not exist** | And must be proven before more of his life goes in. Restore into isolation, outbound disabled, pending execution tokens invalidated, deletions applied, unfinished actions reconciled. Use SQLite's backup API, not a file copy of a live database. |
+| **B1** | **Coordinated backup implemented; Linux drill required before release** | `fix/backup-and-restore` captures ToolGate's volume/key, PostgreSQL, SQLite through its backup API, runtime/configuration material, models/indexes and image-declared volumes. Required-store checks, vault decryption verification and a complete manifest precede success. See [recovery](recovery.md). |
+| **B2** | **Isolated restore implemented; resumption remains blocked** | Fresh volumes, networking disabled, no application startup, pending approvals cancelled, ToolGate locked down, unfinished work held. Exit 3 is an explicit hold. Complete deletion replay needs B3/C2; ambiguous external effects need B6. No automatic promotion or invented reconciliation. Linux/Docker drill must pass before release. |
 | **B3** | **Immutable transcripts contradict forgetting** | Pi's triggers `RAISE(ABORT)` on both UPDATE and DELETE, so a message can never be removed — while the philosophy promises forgetting is real. Both cannot be true. Needs a narrow owner-authorised deletion path with a content-free receipt, append-only everywhere else. |
 | **B4** | **Browser auth** | One static admin key, held forever, no sessions or revocation. Needs a gateway owning login and server-side sessions: HttpOnly SameSite cookie, CSRF, expiry, logout, revocation. **The owner-approval credential must never be reachable by Pi.** Blocks first-run setup. |
 | **B5** | **MCP bridge bypasses everything** | No scope, no identity, whole catalogue. Disable in normal installs; replace with an authenticated bridge on the same scoped path. |
@@ -52,6 +52,7 @@ is nearly free and stays · the model is 4–5× the entire rest of the stack.
 | **B8** | **No provenance on approvals** | Show the owner's originating words beside what Conker wants. Catches the whole injection class by making mismatch visible in a second. Must distinguish owner input from model rationale from external evidence. |
 | **B9** | **No spend cap anywhere** | Limits count invocations, never cost. Paid routes stay disabled until a per-job ceiling and cumulative cap are enforceable. Reserve a conservative upper bound before each request; unknown pricing blocks it. Reconcile after. |
 | **B10** | **Free ≠ private** | Local-only must be an enforceable setting, and external inference must visibly disclose that data left the machine — per turn. |
+| **B11** | **MemoryGate runtime encryption key is unmounted** | `/data/runtime-fernet.key` encrypts provider keys in PostgreSQL but is outside the mounted `/data/backups`. B1 captures it from the original stopped container. Migrate it to persistent storage before recreating that container; adding an empty mount first would hide the surviving key. |
 
 ## C. Build — the product
 

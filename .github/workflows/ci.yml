@@ -21,7 +21,14 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install --quiet pytest
+        run: pip install --quiet -r requirements-dev.txt
+
+      - name: ToolGate compatibility fixture
+        uses: actions/checkout@v4
+        with:
+          repository: alexeybe1kin/toolgate
+          ref: v0.2.2
+          path: .test-gates/toolgate
 
       - name: Shell syntax
         # Catches an unterminated quote before it becomes a broken install on
@@ -49,4 +56,20 @@ jobs:
         # Docker is present on this runner, and the suite only ever uses its
         # read-only verbs — `info` and `compose config`. Nothing is pulled and
         # nothing is started.
+        env:
+          CONKER_TEST_TOOLGATE: ${{ github.workspace }}/.test-gates/toolgate
         run: python -m pytest tests/ -q
+
+  recovery-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet -r requirements-dev.txt
+      - name: Restore real stores without an action-capable process or network
+        env:
+          CONKER_RECOVERY_DOCKER: "1"
+        run: python -m pytest tests/test_recovery_docker.py -q

@@ -12,6 +12,31 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$ROOT/.env"
 
+# Recovery must work after losing .env. Never source configuration from a
+# backup: it is data to inspect, not shell code to execute.
+case "${1:-status}" in
+    backup|restore|verify-backup|recovery-status)
+        command -v python3 >/dev/null 2>&1 || {
+            printf 'Python 3.11+ is required for recovery. Install python3, then retry.\n' >&2
+            exit 1
+        }
+        exec python3 "$ROOT/scripts/recovery.py" --root "$ROOT" "$@"
+        ;;
+esac
+
+case "${1:-status}" in
+    start|restart|update|model)
+        if [ -f "$ROOT/.conker-recovery.json" ] || [ -f "$PWD/.conker-recovery.json" ]; then
+            printf 'Recovery is held. Run conker recovery-status DIRECTORY and resolve its blockers before deployment.\n' >&2
+            exit 1
+        fi
+        if [ -f "$ROOT/.conker-backup.lock" ]; then
+            printf 'Backup is running or was interrupted. Inspect its partial snapshot and source-state.json before restarting writers.\n' >&2
+            exit 1
+        fi
+        ;;
+esac
+
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GREEN=$'\033[32m'
     YELLOW=$'\033[33m'; BLUE=$'\033[34m'; OFF=$'\033[0m'
@@ -128,39 +153,6 @@ cmd_tailscale() {
     say ""
 }
 
-# --- backup -----------------------------------------------------------------
-cmd_backup() {
-    local stamp target
-    stamp=$(date +%Y%m%d-%H%M%S)
-    target="${CONKER_BACKUP_DIR}/snapshot-$stamp"
-    mkdir -p "$target"
-
-    say ""
-    say "${BOLD}Backing up to $target${OFF}"
-    say ""
-
-    cp "$ENV_FILE" "$target/env" && chmod 600 "$target/env"
-    good "Keys and configuration"
-
-    if compose exec -T postgres pg_dump -U memorygate memorygate > "$target/memorygate.sql" 2>/dev/null; then
-        good "Memory (PostgreSQL)"
-    else
-        bad "Memory could not be dumped — is it running?"
-    fi
-
-    if docker cp conker-pi:/data/pi.db "$target/pi.db" >/dev/null 2>&1; then
-        good "Conversations (Pi)"
-    else
-        bad "Conversations could not be copied — is Conker running?"
-    fi
-
-    say ""
-    say "  ${BOLD}$target${OFF}"
-    info "Keep this somewhere other than this machine. A backup that lives only on"
-    info "the thing it is backing up is not a backup."
-    say ""
-}
-
 # --- the rest ---------------------------------------------------------------
 cmd_model()   { compose exec -T ollama ollama pull "${1:?which model? e.g. ./conker model qwen3:4b}"; }
 cmd_logs()    { compose logs --tail "${2:-100}" ${1:+"$1"}; }
@@ -195,7 +187,10 @@ ${BOLD}conker${OFF} — your companion, on this machine
 
   ${BOLD}status${OFF}      Is it working, and what is not
   ${BOLD}tailscale${OFF}   Reach Conker from your phone or laptop
-  ${BOLD}backup${OFF}      Copy everything to your backup folder
+  ${BOLD}backup${OFF} [--destination DIR]  Create a verified snapshot (stops writers during capture)
+  ${BOLD}verify-backup${OFF} SNAPSHOT     Check snapshot files and hashes
+  ${BOLD}restore${OFF} SNAPSHOT --into DIR  Restore into fresh, isolated volumes; remains held
+  ${BOLD}recovery-status${OFF} DIR        Read the recovery hold and unresolved work
   ${BOLD}logs${OFF} [svc]  What a service has been saying
   ${BOLD}model${OFF} NAME  Fetch another local model
   ${BOLD}start${OFF} / ${BOLD}stop${OFF} / ${BOLD}restart${OFF}
@@ -208,7 +203,6 @@ USAGE
 case "${1:-status}" in
     status)    cmd_status ;;
     tailscale) cmd_tailscale ;;
-    backup)    cmd_backup ;;
     logs)      shift; cmd_logs "$@" ;;
     model)     shift; cmd_model "$@" ;;
     start)     cmd_start ;;

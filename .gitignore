@@ -7,6 +7,11 @@
 /conker-backups/
 /data/
 
+# Recovery state contains credentials or identifiers for owner data.
+.conker-backup.lock
+.conker-recovery.json
+.test-gates/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -89,6 +89,15 @@ else
     NEEDS_CLONE=1
 fi
 
+if [ -f "$ROOT/.conker-recovery.json" ] || [ -f "$PWD/.conker-recovery.json" ]; then
+    printf 'Recovery is held. Read conker recovery-status DIRECTORY before provisioning any services.\n' >&2
+    exit 1
+fi
+if [ -f "$ROOT/.conker-backup.lock" ]; then
+    printf 'Backup is running or was interrupted. Inspect its source-state.json before provisioning services.\n' >&2
+    exit 1
+fi
+
 banner() {
     printf '\n%s' "$BLUE"
     cat <<'ART'

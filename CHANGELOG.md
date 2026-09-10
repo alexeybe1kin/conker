@@ -6,6 +6,17 @@ which module versions a release pins.
 
 ## Unreleased
 
+- **Backup and held recovery (B1/B2):** replace live SQLite file copying and false-success
+  backups with coordinated snapshots, required-store checks, vault-key verification, file hashes,
+  and exact image identities. Capture ToolGate's complete volume and MemoryGate's otherwise
+  unmounted runtime key, plus index/model and image-declared volumes.
+- **`restore`, `verify-backup`, `recovery-status`:** recovery uses fresh volumes and no networking
+  or application startup. Old pending approvals are cancelled, ToolGate is locked down, and
+  unfinished work is held. Exit 3 means **held**, not usable. Deletion replay and complete
+  external-effect reconciliation remain blocked by B3/C2 and B6; no promotion command is shipped.
+- Add offline behavioral tests and a separate Linux/Docker recovery drill. Gate code and B7/B8
+  are unchanged. See `docs/recovery.md` for the validation boundary and recovery procedure.
+
 The installer. One command takes a clean machine to a running Conker.
 
 - **`./install.sh`** — checks the machine, asks three questions in plain

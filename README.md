@@ -49,7 +49,7 @@ Each gate stays independently forkable and runnable on its own — see
 ```bash
 ./conker status      # is it working, and what is not
 ./conker tailscale   # reach it from your phone or laptop
-./conker backup      # copy everything to your backup folder
+./conker backup      # verified snapshot; stops writers during capture
 ./conker logs pi     # what a service has been saying
 ./conker update      # pull the pinned versions and restart
 ```
@@ -72,11 +72,18 @@ opening a door in front of everyone else's.
 
 ## Where your data lives
 
-In Docker volumes on this machine, and copied to the backup folder you chose during install.
+Most live data is in Docker volumes. `./conker backup` captures the authoritative stores,
+ToolGate's vault and key, MemoryGate's provider-encryption key, configuration, models, and image
+identities. It uses SQLite's backup API and a PostgreSQL logical dump; a failed capture exits
+nonzero and never publishes a successful snapshot. Python 3.11+ is required on the host.
 
-**That folder is the only copy.** It holds your conversations, everything Conker remembers, and
-`.env` — which contains the keys to the encrypted vault and the database. Losing `.env` means
-losing access to your own data. Put the folder somewhere that is not this machine.
+Snapshots contain credentials and decryption keys. Keep them private and copy them to an
+encrypted destination on a separate device. They are not encrypted by this command.
+
+`./conker restore SNAPSHOT --into NEW_DIRECTORY` restores into fresh, isolated Docker volumes.
+**Recovery remains held, with exit code 3.** No application workers start. Complete deletion
+replay and external-action reconciliation still require B3/C2 and B6; this is not yet a one-command
+return to service. See [backup and recovery](docs/recovery.md) for coverage, limitations and the drill.
 
 ## Configuration
 
