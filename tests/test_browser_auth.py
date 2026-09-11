@@ -61,7 +61,18 @@ def compose_config(tmp_path):
         timeout=30,
         env={key: value for key, value in os.environ.items() if key not in names},
     )
-    assert result.returncode == 0, result.stderr
+    if result.returncode != 0:
+        # A missing Docker is not this test failing. Every other Docker-dependent
+        # test here skips, and one that fails instead reports an environment
+        # problem as a security regression - which is the most expensive kind of
+        # false alarm, because the property it guards is the one worth trusting.
+        unavailable = ("docker" in result.stderr.lower()
+                       or "docker" in result.stdout.lower()
+                       or not shutil.which("docker"))
+        if unavailable:
+            pytest.skip(f"needs a running Docker to resolve the compose file: "
+                        f"{(result.stderr or result.stdout).strip().splitlines()[-1][:120]}")
+        raise AssertionError(result.stderr)
     return json.loads(result.stdout)
 
 
