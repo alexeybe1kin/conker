@@ -196,7 +196,7 @@ check_port_free() {
     fi
     if [ -n "$in_use" ]; then
         # Our own previous install holding it is not a conflict.
-        if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx 'conker-pi'; then
+        if docker ps --format '{{.Names}}' 2>/dev/null | grep -Eq '^conker-(pi|gateway)$'; then
             good "Port $port is held by an existing Conker (it will be replaced)"
             return 0
         fi
@@ -338,7 +338,9 @@ write_env() {
     fi
     # A service-issued owner credential must never be invented or replaced by an installer rerun.
     GATEWAY_TOOLGATE_OWNER_KEY=${GATEWAY_TOOLGATE_OWNER_KEY:-}
-    [ ! -f "$ENV_FILE" ] || GATEWAY_TOOLGATE_OWNER_KEY=$(sed -n 's/^GATEWAY_TOOLGATE_OWNER_KEY=//p' "$ENV_FILE" | head -1)
+    if [ -z "$GATEWAY_TOOLGATE_OWNER_KEY" ] && [ -f "$ENV_FILE" ]; then
+        GATEWAY_TOOLGATE_OWNER_KEY=$(sed -n 's/^GATEWAY_TOOLGATE_OWNER_KEY=//p' "$ENV_FILE" | head -1)
+    fi
     GATEWAY_ORIGIN=${GATEWAY_ORIGIN:-}
     if [ -z "$GATEWAY_ORIGIN" ] && [ -f "$ENV_FILE" ]; then
         GATEWAY_ORIGIN=$(sed -n 's/^GATEWAY_ORIGIN=//p' "$ENV_FILE" | head -1)
@@ -463,6 +465,12 @@ pull_and_start() {
 
     step "Starting"
     adopt_stale_network
+    # A stale image must fail here, never leave an unauthenticated worker as the browser surface.
+    if ! compose run --rm --no-deps -T gateway python -c 'import gateway.api' 2>"$LOG"; then
+        die "The browser gateway preflight failed." \
+            "Check Docker with docker info and verify that PI_VERSION includes the B4 gateway." \
+            "For branch review and the release gate, follow docs/browser-auth.md."
+    fi
     if ! compose up -d 2>"$LOG"; then
         # A port conflict is the most common way this fails, and Docker reports
         # it as a 500 from an internal forwarding API — true, and no use to

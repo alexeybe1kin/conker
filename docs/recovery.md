@@ -1,5 +1,13 @@
 # Backup and recovery
 
+Browser authentication (B4) adds `gateway_data` to the captured authoritative
+stores: its `auth.db`, TLS certificate and private key are included. SQLite uses
+the backup API, including committed WAL content. Restore deletes all captured
+browser sessions and advances the password generation before any application
+can run. The password verifier survives. A pre-B4 snapshot remains restorable
+under hold, but cannot supply browser credentials it never captured. See
+[browser authentication](browser-auth.md) for password and TLS recovery.
+
 `conker backup` requires Python 3.11+ on the host and access to the local Docker daemon.
 It does not install dependencies, pull images, or invoke model/provider APIs.
 

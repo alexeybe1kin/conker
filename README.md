@@ -3,7 +3,7 @@
 Your own AI companion, running on your own machine. It talks, it remembers, and every action it
 takes passes a boundary you control.
 
-Nothing here calls home. There is no account, no hosted service, and no public-internet path at
+Nothing here calls home. There is no cloud account, no hosted service, and no public-internet path at
 all — not as a setting, but by construction.
 
 ```bash
@@ -13,6 +13,11 @@ curl -fsSL https://raw.githubusercontent.com/alexeybe1kin/conker/main/install.sh
 That is the whole installation. It checks the machine, asks three questions in plain words,
 generates every secret itself, pulls pinned images, starts them, tells you honestly which services
 came up, and prints one URL.
+
+**B4 branch release gate:** the browser gateway requires a new published Pi image
+and ToolGate's separate owner channel. The existing release pins have not been
+advanced. See [browser setup, recovery and rollout](docs/browser-auth.md) before
+running this branch; it intentionally refuses an image without the gateway.
 
 ---
 
@@ -29,11 +34,12 @@ and only reaches a hosted model if you give it a key and ask it to.
 
 ## What gets installed
 
-Five services, each its own module with its own repository, composed into one product.
+Five modules, with the browser gateway running as a separate process in the Pi image.
 
 | | What it is |
 |---|---|
-| **Pi** | The runtime. Turns, sessions, model routing, execution history. **The only service your browser talks to** — which is what keeps keys and host paths off the client. |
+| **Gateway** | HTTPS login and revocable browser sessions. Holds owner approval authority outside Pi. |
+| **Pi** | The worker. Turns, sessions, model routing and execution history, reached through the gateway. |
 | **ToolGate** | The action boundary. The only thing that can *do* anything, and the only thing that can approve it. |
 | **MemoryGate** | The memory boundary. What Conker knows about you, as evidence with citations. |
 | **SystemGate** | Read-only observation of the machine. |

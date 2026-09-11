@@ -132,6 +132,7 @@ SECRETS = [
     "TOOLGATE_CALLBACK_SECRET", "MEMORYGATE_ADMIN_KEY", "MEMORYGATE_READ_KEY",
     "MEMORYGATE_DB_PASSWORD", "SYSTEMGATE_ADMIN_KEY", "EMBEDDINGS_KEY",
     "PI_TOOLGATE_KEY",
+    "PI_GATEWAY_KEY",
 ]
 
 
@@ -233,6 +234,26 @@ def test_running_twice_repairs_rather_than_duplicates(install):
     body = install.env_file.read_text()
     for name in SECRETS:
         assert body.count(f"{name}=") == 1, f"{name} was written twice"
+
+
+@needs_docker
+def test_gateway_key_and_owner_credential_survive_installer_rerun(install):
+    import hashlib
+
+    install("--yes", "--dry-run")
+    first = env_values(install.env_file)
+    assert first["PI_GATEWAY_KEY_SHA256"] == hashlib.sha256(
+        first["PI_GATEWAY_KEY"].encode()
+    ).hexdigest()
+    assert first["GATEWAY_ORIGIN"] == "https://localhost:8050"
+    assert first["GATEWAY_TOOLGATE_OWNER_KEY"] == ""
+    install.env_file.write_text(install.env_file.read_text().replace(
+        "GATEWAY_TOOLGATE_OWNER_KEY=", "GATEWAY_TOOLGATE_OWNER_KEY=owner-issued-scoped-key"
+    ))
+    install("--yes", "--dry-run")
+    second = env_values(install.env_file)
+    assert second["PI_GATEWAY_KEY"] == first["PI_GATEWAY_KEY"]
+    assert second["GATEWAY_TOOLGATE_OWNER_KEY"] == "owner-issued-scoped-key"
 
 
 @needs_docker

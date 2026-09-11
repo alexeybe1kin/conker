@@ -158,6 +158,7 @@ def test_real_backup_restore_and_interruption(live_stack, tmp_path):
     assert state["vault_values_verified"] == 1
     assert state["memory_provider_key_verified"] is True
     assert approval in state["invalidated_requests"]
+    assert state["invalidated_browser_sessions"] == 1
     postgres = state["containers"][0]
     restored = docker.json("inspect", postgres)[0]
     assert restored["HostConfig"]["NetworkMode"] == "none"

@@ -148,14 +148,12 @@ cmd_tailscale() {
     if command -v tailscale >/dev/null 2>&1; then
         good "Tailscale is installed"
         if tailscale status >/dev/null 2>&1; then
-            local host
-            host=$(tailscale status --json 2>/dev/null | sed -n 's/.*"DNSName"[[:space:]]*:[[:space:]]*"\([^".]*\).*/\1/p' | head -1)
             good "Connected"
             say ""
-            say "  From your other devices, open:"
-            say "     ${BLUE}http://${host:-<this-machine>}:${CONKER_PORT:-8050}${OFF}"
+            say "  Remote browser access also needs HTTPS forwarding to the local gateway."
+            say "  Configure its exact HTTPS address as GATEWAY_ORIGIN before signing in."
             say ""
-            info "If that does not resolve, run 'tailscale status' to see the name."
+            info "See docs/browser-auth.md. Joining Tailscale alone does not expose the localhost listener."
         else
             say "  Not connected yet. Run:"
             say "     ${BOLD}sudo tailscale up${OFF}"
@@ -165,7 +163,7 @@ cmd_tailscale() {
         say "     ${BOLD}curl -fsSL https://tailscale.com/install.sh | sh${OFF}"
         say "     ${BOLD}sudo tailscale up${OFF}"
         say ""
-        info "Then run this command again and it will tell you the address."
+        info "Then configure HTTPS forwarding as described in docs/browser-auth.md."
     fi
     say ""
     warn "One thing Conker will not do: bind to 0.0.0.0."
@@ -217,7 +215,8 @@ ${BOLD}conker${OFF} — your companion, on this machine
   ${BOLD}start${OFF} / ${BOLD}stop${OFF} / ${BOLD}restart${OFF}
   ${BOLD}update${OFF}      Pull the pinned versions and restart
   ${BOLD}key${OFF}         Show the admin key
-  ${BOLD}auth${OFF} setup|reset-password|revoke-all|certificate  Browser access, managed from this host
+  ${BOLD}auth${OFF} setup|reset-password|revoke-all|certificate|renew-certificate
+              Browser access and TLS, managed from this host
 
 USAGE
 }
@@ -226,8 +225,8 @@ case "${1:-status}" in
     auth)
         case "${2:-}" in
             setup|reset-password) compose run --rm --no-deps gateway python -m gateway "$2" ;;
-            revoke-all|certificate) compose run --rm --no-deps -T gateway python -m gateway "$2" ;;
-            *) printf 'Use conker auth setup, reset-password, revoke-all or certificate.\n' >&2; exit 1 ;;
+            revoke-all|certificate|renew-certificate) compose run --rm --no-deps -T gateway python -m gateway "$2" ;;
+            *) printf 'Use conker auth setup, reset-password, revoke-all, certificate or renew-certificate.\n' >&2; exit 1 ;;
         esac ;;
     status)    cmd_status ;;
     tailscale) cmd_tailscale ;;

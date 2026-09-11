@@ -60,6 +60,9 @@ jobs:
           CONKER_TEST_TOOLGATE: ${{ github.workspace }}/.test-gates/toolgate
         run: python -m pytest tests/ -q
 
+      - name: Browser deployment and recovery mutation drill
+        run: python scripts/auth_mutation_drill.py
+
   recovery-drill:
     runs-on: ubuntu-latest
     timeout-minutes: 20
