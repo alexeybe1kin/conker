@@ -77,7 +77,7 @@ is nearly free and stays · the model is 4–5× the entire rest of the stack.
 | **E3** | **`PI_OPENROUTER_KEY` is spendable directly by a compromised Pi** | Confirmed by live test. The paid-model key lives in Pi's own environment because Pi calls OpenRouter directly for inference, so ToolGate's spend caps do not cover it - inference is not a ToolGate-mediated action. Empty on a fresh install, but the moment the owner sets a paid key, a manipulated Pi could exhaust it in a loop outside any accounting. Needs a spend limit at the point Pi calls the provider. Not a boundary breach: it is the one credential the runtime must hold to work. |
 | **E4** | **`conker update` breaks an install made before a new required var** | The auth work added `PI_GATEWAY_KEY` / `PI_GATEWAY_KEY_SHA256` as compose-required. `install.sh` generates them, but `conker update` does not re-run the env repair, so an existing `.env` from before the change fails compose interpolation on the next update. Fix: `conker update` should run the same `keep_or_make` repair the installer does. |
 
-## F. Security & safety audit (2026-09-12)
+## F. Security & safety audit (2026-09-12) — ALL FIXED
 
 Two independent reviews — one verifying the boundaries hold, one hunting accidental harm — plus a
 live container test. **The core boundary held everywhere it matters** (see F0). These are the gaps
@@ -105,7 +105,7 @@ works; no permanent-lockout path found.
 | **F11** | **Low — injection persistence** | Model-written summaries are promoted into **system messages** (`loop.py:178`, `:139`) — higher trust than they earned. Recalled memory gets an "untrusted evidence" label; summaries do not. |
 | **F12** | **Low — maintenance** | MemoryGate pins `cryptography 46.0.1`, before the 48.0.1 wheel fix for CVE-2026-34180 (bundled OpenSSL) and a PKCS#7 oracle. The vault uses Fernet, not PKCS#7; no exploit demonstrated. Bump it. |
 
-## G. Golden-standard hardening (2026-09-12)
+## G. Golden-standard hardening (2026-09-12) — G2/G3(partial)/G5 done
 
 Checked against Docker's own compose hardening reference. These are not exploits the audit found;
 they are the defence-in-depth the containers are missing. Verified against
@@ -179,6 +179,8 @@ nonzero manual reconciliation, disputed-release resolution, and an owner UI rema
 follow-ups. Owners must stop active workers and verify the provider outcome before
 attesting that an action did not execute. Review the ToolGate spending contract for
 the endpoint and its evidence requirements.
+
+| **B12** | **The pinned Pi image predates the gateway code** | The gateway runs from `ghcr.io/alexeybe1kin/pi` but the `gateway/` module landed on main today and was never published as a new Pi image, so `conker-gateway` restart-loops with `No module named gateway`. Browser auth cannot come up until a new Pi image is tagged and `versions.env` bumped. This is the deployment half of B4. |
 
 ## D. Cheap
 

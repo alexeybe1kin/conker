@@ -16,6 +16,13 @@ name: conker
 x-service: &service
   restart: unless-stopped
   networks: [conker_net]
+  # Hardening safe for every service. no-new-privileges stops a process gaining
+  # privileges through a setuid binary; pids_limit caps a fork bomb. cap_drop is
+  # intentionally not here - Postgres and Ollama need a few capabilities, so
+  # dropping ALL globally would break them, and it belongs in a per-service pass.
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 512
 
 services:
 
@@ -25,6 +32,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
     container_name: conker-gateway
+    mem_limit: 512m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     networks: [conker_net, owner_control]
@@ -48,6 +56,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
     container_name: conker-pi
+    mem_limit: 768m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     environment:
@@ -74,6 +83,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/toolgate:${TOOLGATE_VERSION}
     container_name: toolgate-api
+    mem_limit: 512m
     networks:
       conker_net: {}
       owner_control:
@@ -113,6 +123,7 @@ services:
     <<: *service
     image: ${SEARXNG_IMAGE}
     container_name: toolgate-searxng
+    mem_limit: 512m
     networks:
       conker_net:
         aliases: [toolgate-searxng]
@@ -122,6 +133,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/memorygate:${MEMORYGATE_VERSION}
     container_name: memorygate-api
+    mem_limit: 1g
     ports:
       - "127.0.0.1:8020:8020"
     environment:
@@ -151,6 +163,7 @@ services:
     <<: *service
     image: ${POSTGRES_IMAGE}
     container_name: memorygate-postgres
+    mem_limit: 1g
     environment:
       POSTGRES_USER: memorygate
       POSTGRES_PASSWORD: ${MEMORYGATE_DB_PASSWORD:?run ./install.sh}
@@ -167,6 +180,7 @@ services:
     <<: *service
     image: ${QDRANT_IMAGE}
     container_name: memorygate-qdrant
+    mem_limit: 2g
     # Vector management belongs only to MemoryGate, never to the agent runtime.
     networks: [memory_index]
     volumes:
@@ -177,6 +191,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/embeddings:${EMBEDDINGS_VERSION}
     container_name: embeddings-api
+    mem_limit: 512m
     ports:
       - "127.0.0.1:8030:8030"
     environment:
@@ -201,6 +216,7 @@ services:
     <<: *service
     image: ${OLLAMA_IMAGE}
     container_name: conker-ollama
+    mem_limit: 8g
     networks:
       conker_net:
         aliases:
@@ -220,6 +236,7 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/systemgate:${SYSTEMGATE_VERSION}
     container_name: systemgate-api
+    mem_limit: 512m
     # Share the host's UTS namespace so /vitals reports the host's name rather
     # than a container id. Bind-mounting /proc is not enough: the kernel
     # resolves the hostname from the reading process's namespace, not the mount.
