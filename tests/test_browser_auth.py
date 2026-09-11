@@ -153,3 +153,17 @@ def test_unknown_gateway_schema_fails_before_any_application_can_start(tmp_path)
         db.execute("CREATE TABLE unexpected(x)")
     with pytest.raises(sqlite3.DatabaseError):
         recovery_data.invalidate_browser_sessions(database)
+
+
+def test_qdrant_network_is_shared_only_with_memorygate(tmp_path):
+    config = compose_config(tmp_path)
+    services = config["services"]
+    assert set(services["qdrant"]["networks"]) == {"memory_index"}
+    assert not services["qdrant"].get("ports")
+    peers = {name for name, service in services.items() if "memory_index" in service.get("networks", {})}
+    assert peers == {"memorygate", "qdrant"}
+    assert config["networks"]["memory_index"]["internal"] is True
+    assert services["memorygate"]["environment"]["QDRANT_URL"] == "http://qdrant:6333"
+    assert "conker_net" in services["memorygate"]["networks"]
+    assert "conker_net" in services["pi"]["networks"]
+    assert "conker_net" in services["ollama"]["networks"]

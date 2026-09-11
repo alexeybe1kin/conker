@@ -62,6 +62,15 @@ CASES = [
 ]
 
 
+INDEX = "tests/test_browser_auth.py::test_qdrant_network_is_shared_only_with_memorygate"
+CASES.extend([
+    ("qdrant-back-on-worker-network", "docker-compose.yml",
+     "    networks: [memory_index]", "    networks: [conker_net]", INDEX),
+    ("memorygate-loses-index-network", "docker-compose.yml",
+     "      memory_index: {}", "", INDEX),
+])
+
+
 def main() -> int:
     scratch = ROOT / ".test-gates"
     scratch.mkdir(exist_ok=True)
@@ -88,7 +97,7 @@ def main() -> int:
                 )
             file.write_text(source.replace(old, new), encoding="utf-8")
         report = target / "results.xml"
-        tests = [selected] if selected else [DEPLOYMENT, RESTORE]
+        tests = [selected] if selected else [DEPLOYMENT, RESTORE, INDEX]
         result = subprocess.run(
             [
                 sys.executable,

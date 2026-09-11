@@ -115,3 +115,5 @@ See its README for validation and the outstanding cross-platform dependency-lock
 ## Licence
 
 MIT.
+
+Qdrant is on the internal `memory_index` network shared only with MemoryGate. Pi cannot reach its unauthenticated management API through a shared bridge. Ollama remains on `conker_net` for Pi and Embeddings inference; its management API is not separately isolated.

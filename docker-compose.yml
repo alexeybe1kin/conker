@@ -145,6 +145,7 @@ services:
     networks:
       conker_net:
         aliases: [memorygate-api]
+      memory_index: {}
 
   postgres:
     <<: *service
@@ -166,6 +167,8 @@ services:
     <<: *service
     image: ${QDRANT_IMAGE}
     container_name: memorygate-qdrant
+    # Vector management belongs only to MemoryGate, never to the agent runtime.
+    networks: [memory_index]
     volumes:
       - qdrant_data:/qdrant/storage
 
@@ -190,6 +193,8 @@ services:
         aliases: [embeddings-api]
 
   # --- local models ---------------------------------------------------------
+  # Pi needs this unauthenticated API for inference; model management remains reachable.
+  # An inference-only proxy is a separate boundary, not provided by this bridge.
   # One Ollama, two consumers. Pi thinks with it and Embeddings vectorises with
   # it; running two would download and store every model twice for no benefit.
   ollama:
@@ -250,6 +255,8 @@ volumes:
   systemgate_data:
 
 networks:
+  memory_index:
+    internal: true
   # Keep the plaintext service credential off the worker's bridge.
   owner_control:
     internal: true
