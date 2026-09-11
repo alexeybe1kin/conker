@@ -122,6 +122,64 @@ https://github.com/docker/docs compose-file security guidance.
 None of these weakens anything in F0; all are additive. G1 and G2 are the two that matter most — G2
 because it stops the OOM, G1 because it is the single highest-value container-hardening step.
 
+### Implementation batch: source fixes awaiting review
+
+Branches are stacked within each repository; later branches include earlier units.
+No deployment or image publication was performed, and `gates/pi` was not edited.
+The original reports above remain the audit record.
+
+| Finding | Repository / branch | Commit | Result |
+|---|---|---|---|
+| F3 | ToolGate `fix/automation-child-approval` | `e7bd864` | Approval fingerprints every referenced child definition/version, including nested branches; execution uses the checked snapshot. Changed children require fresh approval. |
+| F6 | Companion `fix/isolate-qdrant` | `715c15f` | Qdrant leaves `conker_net`; only MemoryGate shares its internal network. |
+| F10 | MemoryGate `fix/hosted-spend-refusal` | `1950e24` | Direct hosted inference is refused and audited; cost is an owner-supplied estimate or explicitly unknown. A quote never enables spending. |
+| F10 | ToolGate `fix/owner-reservation-release` | `652ce27` | Owner-only local hold release after an explicit no-execution attestation and evidence note; action identity remains non-retryable. Late replies dispute the release, restore accounting and freeze paid work. |
+| F7 | MemoryGate `fix/truthful-qdrant-health` | `60de014` | Failed inspection and unknown dimensions return degraded with the collection/reason. |
+| F8, MemoryGate side | MemoryGate `fix/permanent-ingestion-limit` | `c9b1c8f` | Oversized conversation ingestion returns 413, `detail.code=CONTENT_TOO_LARGE`, `retryable=false`, `max_content_characters=16000`, without echoing content. Exactly 16,000 remains accepted. |
+| F12 | MemoryGate `fix/cryptography-security-update` | `616dcc3` | Pin 50.0.0, covering both advisories; Fernet format compatibility and full service tests pass. |
+| F10 follow-up | MemoryGate `fix/hosted-cost-quote-validation` | `0ce53d4` | Supplied metadata cannot overwrite the calculated cost or its estimate label. |
+
+Resolved Compose membership, checked with `docker compose config --format json`
+using synthetic credentials (no installed secrets in test output):
+
+| Service | Networks |
+|---|---|
+| Qdrant | `memory_index` |
+| MemoryGate | `conker_net`, `memory_index` |
+| Pi | `conker_net` |
+| Ollama | `conker_net` |
+| Embeddings | `conker_net` |
+
+`memory_index` resolves to `conker_memory_index`, `internal: true`, with no Qdrant
+host-port publication. This verifies configuration, not a live network migration.
+Ollama management remains reachable because its inference API is intentionally
+shared; an inference-only proxy remains separate work. PostgreSQL ownership-based
+rehydration of vector hits and the existing owner-control network are unchanged.
+
+Validation: ToolGate **213 passed**, **45 mutations caught**; MemoryGate **57 passed**
+on installed cryptography **50.0.0**, **19 mutations caught** (18-case full drill plus
+the added quote-override case with its own passing baseline); Companion **37 passed,
+19 skipped**, **8 mutations caught**. The Companion skips cover POSIX-only installer
+and opt-in integration fixtures. Running-service module-contract tests were excluded
+from the gate suites. No paid requests or live stack changes were made. The existing
+F0 regression tests remain in these suites/drills.
+
+F12 correction: the bundled-OpenSSL advisory names **48.0.1**, but the PKCS#7 advisory
+requires **50.0.0**, so 48.0.1 alone would not cover both.
+[OpenSSL wheel advisory](https://github.com/pyca/cryptography/security/advisories/GHSA-537c-gmf6-5ccf),
+[PKCS#7 advisory](https://github.com/pyca/cryptography/security/advisories/GHSA-g6cj-pr64-35w5).
+The pin upgrade was tested against the already installed 50.0.0; a fresh pip download
+was blocked by the session's network restrictions. No Fernet exploit is claimed.
+
+Remaining work: Pi must classify the permanent ingestion error (its F8 half) and
+implement its other assigned findings. F10's generic HTTP transfer amounts are
+still outside inference-cost accounting. MemoryGate hosted spending stays disabled
+until a metered adapter exists. Release is local accounting, not a provider refund;
+nonzero manual reconciliation, disputed-release resolution, and an owner UI remain
+follow-ups. Owners must stop active workers and verify the provider outcome before
+attesting that an action did not execute. Review the ToolGate spending contract for
+the endpoint and its evidence requirements.
+
 ## D. Cheap
 
 | # | |
