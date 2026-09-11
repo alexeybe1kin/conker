@@ -77,6 +77,34 @@ is nearly free and stays · the model is 4–5× the entire rest of the stack.
 | **E3** | **`PI_OPENROUTER_KEY` is spendable directly by a compromised Pi** | Confirmed by live test. The paid-model key lives in Pi's own environment because Pi calls OpenRouter directly for inference, so ToolGate's spend caps do not cover it - inference is not a ToolGate-mediated action. Empty on a fresh install, but the moment the owner sets a paid key, a manipulated Pi could exhaust it in a loop outside any accounting. Needs a spend limit at the point Pi calls the provider. Not a boundary breach: it is the one credential the runtime must hold to work. |
 | **E4** | **`conker update` breaks an install made before a new required var** | The auth work added `PI_GATEWAY_KEY` / `PI_GATEWAY_KEY_SHA256` as compose-required. `install.sh` generates them, but `conker update` does not re-run the env repair, so an existing `.env` from before the change fails compose interpolation on the next update. Fix: `conker update` should run the same `keep_or_make` repair the installer does. |
 
+## F. Security & safety audit (2026-09-12)
+
+Two independent reviews — one verifying the boundaries hold, one hunting accidental harm — plus a
+live container test. **The core boundary held everywhere it matters** (see F0). These are the gaps
+found. Worst first.
+
+**F0 — what held, confirmed both live and in source:** a compromised Pi cannot read the vault,
+MemoryGate, SystemGate, or the owner-approval channel (401 to all; gateway is network-isolated).
+Approval integrity for tools rejects forged/replayed/cross-agent/stale requests. Revocation survives
+bootstrap. Execution keys cannot administer ToolGate. Child spending cannot escape its job budget.
+The SSRF/tailnet filter holds including rebinding. Password recovery is honest; session revocation
+works; no permanent-lockout path found.
+
+| # | Severity | Defect |
+|---|---|---|
+| **F1** | **Regression, breaks tools now** | I merged ToolGate's durable-execution work (which requires `action_id` before dispatch, `server.py:952`) without the matching Pi change. `pi/toolgate.py:121` sends no `action_id` or `job_id`, so ordinary outbound tool execution and approval resumption are now **rejected**. Both agents warned Pi needed this; I merged one side of the interface. Fix Pi's client to create and send the ID. |
+| **F2** | **High — money** | Pi records paid requests as **$0**. `openrouter.py:44` treats missing/null/empty prices as zero; `:40` ignores per-request fees. A paid model with a per-request fee dispatches even with `allow_paid=False`, and a real `usage.cost=0.5` was recorded as `cost_usd=0.0`. Reproduced with fixtures. Money spent despite choosing free, and the accounting hides it. **Fix before wiring any card.** |
+| **F3** | **High — approval integrity** | An approved *automation* runs a **changed child tool** without fresh approval. Approval binds the automation's version/args (`server.py:1661`) but execution loads each child's *current* definition (`server.py:1206`) with `approval_granted=True`. Owner approves v1, child edited to v2 in the window, v2 runs. The tool-level fix earlier did not cover automation children. |
+| **F4** | **High — correctness** | Concurrent resume overwrites a completed action as `failed` — the refusal handler writes `failed` unconditionally (`loop.py:220`) with no state compare (`store.py:348`); produced `status=failed, acted=1`. And a restart leaves an acted turn as `interrupted` (`store.py:430`), which resume rejects (`loop.py:202`) and the unreplied queue omits — the owner cannot retrieve the missing reply. |
+| **F5** | **High — forgetting** | Forgetting after an agent-ID change deletes the **wrong namespace**. The outbox (`memory_store.py:7`) does not keep the original destination identity; delivery uses the *current* agent ID (`memory.py:22`), which MemoryGate includes in record identity. Delete returns a receipt for the new namespace; original content survives; Pi accepts it (`memory.py:42`) and stops trying. Real deletion silently fails. |
+| **F6** | **Medium — boundary** | Pi can reach **Qdrant and Ollama unauthenticated** on `conker_net`. Qdrant has no auth (`compose:165`) — a socket from Pi can delete/modify vector collections; Ollama (`compose:195`) can create/delete models with embedded system prompts. Contained: MemoryGate reloads text from Postgres with ownership checks, so forged vectors can't become memory *text* — but retrieval and local-model availability can be damaged and persist. Put Qdrant/Ollama on an internal network Pi does not share, or add auth. |
+| **F7** | **Medium — truthful status** | MemoryGate returns `{"status":"ok"}` when listing Qdrant collections succeeds but inspecting one fails — the exception is swallowed (`qdrant_store.py:88`). False green. |
+| **F8** | **Medium — availability** | A >16,000-char message loops forever: Pi caps nothing (`api.py:153`), MemoryGate rejects at 16k with 422 (`conversation.py:34`), the worker retries endlessly (`memory.py:141`) advising a credential fix that cannot help. |
+| **F9** | **Medium — availability** | A hosted-catalogue outage blocks the healthy local fallback: routing builds the hosted candidate before appending local (`routing.py:94`) and the exception escapes outside the failure handler (`loop.py:103`). Local invocation count was zero during a simulated outage. |
+| **F10** | **Medium — money coverage** | Two more uncapped paid paths beyond E3: MemoryGate calls OpenAI directly (`ollama_service.py:31`) outside ToolGate's ledger; and a generic HTTP tool can call a payment API whose transfer amount the inference-cost ledger does not bound. Unresolved reservations also have no owner release path, so they can exhaust the budget indefinitely. |
+| **F11** | **Low — injection persistence** | Model-written summaries are promoted into **system messages** (`loop.py:178`, `:139`) — higher trust than they earned. Recalled memory gets an "untrusted evidence" label; summaries do not. |
+| **F12** | **Low — maintenance** | MemoryGate pins `cryptography 46.0.1`, before the 48.0.1 wheel fix for CVE-2026-34180 (bundled OpenSSL) and a PKCS#7 oracle. The vault uses Fernet, not PKCS#7; no exploit demonstrated. Bump it. |
+
 ## D. Cheap
 
 | # | |
