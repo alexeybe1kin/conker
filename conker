@@ -25,7 +25,7 @@ case "${1:-status}" in
 esac
 
 case "${1:-status}" in
-    start|restart|update|model)
+    start|restart|update|model|auth)
         if [ -f "$ROOT/.conker-recovery.json" ] || [ -f "$PWD/.conker-recovery.json" ]; then
             printf 'Recovery is held. Run conker recovery-status DIRECTORY and resolve its blockers before deployment.\n' >&2
             exit 1
@@ -96,7 +96,11 @@ cmd_status() {
     say ""
     for i in "${!names[@]}"; do
         local body status
-        body=$(curl -fsS -m 3 "http://127.0.0.1:${ports[$i]}/health" 2>/dev/null || true)
+        if [ "$i" -eq 0 ]; then
+            body=$(compose exec -T gateway python -m gateway health 2>/dev/null || true)
+        else
+            body=$(curl -fsS -m 3 "http://127.0.0.1:${ports[$i]}/health" 2>/dev/null || true)
+        fi
         if [ -z "$body" ]; then
             bad "$(printf '%-12s' "${names[$i]}") not answering on ${ports[$i]}"
             worst=down
@@ -120,7 +124,7 @@ cmd_status() {
         down)     say "  ${RED}Something is not running.${OFF}  Try: ./conker restart" ;;
     esac
     say ""
-    say "  ${BOLD}Open:${OFF} ${BLUE}http://127.0.0.1:${CONKER_PORT:-8050}${OFF}"
+    say "  ${BOLD}Open:${OFF} ${BLUE}${GATEWAY_ORIGIN:-https://localhost:8050}${OFF}"
     say "  ${DIM}Backups: ${CONKER_BACKUP_DIR}${OFF}"
     say ""
 }
@@ -213,11 +217,18 @@ ${BOLD}conker${OFF} — your companion, on this machine
   ${BOLD}start${OFF} / ${BOLD}stop${OFF} / ${BOLD}restart${OFF}
   ${BOLD}update${OFF}      Pull the pinned versions and restart
   ${BOLD}key${OFF}         Show the admin key
+  ${BOLD}auth${OFF} setup|reset-password|revoke-all|certificate  Browser access, managed from this host
 
 USAGE
 }
 
 case "${1:-status}" in
+    auth)
+        case "${2:-}" in
+            setup|reset-password) compose run --rm --no-deps gateway python -m gateway "$2" ;;
+            revoke-all|certificate) compose run --rm --no-deps -T gateway python -m gateway "$2" ;;
+            *) printf 'Use conker auth setup, reset-password, revoke-all or certificate.\n' >&2; exit 1 ;;
+        esac ;;
     status)    cmd_status ;;
     tailscale) cmd_tailscale ;;
     logs)      shift; cmd_logs "$@" ;;

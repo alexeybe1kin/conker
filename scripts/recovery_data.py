@@ -213,6 +213,17 @@ def invalidate_approvals(database: Path) -> dict:
     return {"invalidated_requests": invalidated, "lockdown": True}
 
 
+def invalidate_browser_sessions(database: Path) -> dict:
+    # Never start gateway code while restoring: it could initialize missing auth data.
+    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=rw", uri=True)) as db, db:
+        db.execute("BEGIN IMMEDIATE")
+        count = db.execute("SELECT count(*) FROM sessions").fetchone()[0]
+        db.execute("UPDATE owner SET generation=generation+1")
+        db.execute("DELETE FROM sessions")
+        db.execute("DELETE FROM login_attempts")
+    return {"invalidated_browser_sessions": count}
+
+
 def unfinished_turns(database: Path) -> list[dict]:
     with closing(
         sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)
@@ -263,6 +274,7 @@ def main() -> None:
             "snapshot-tree",
             "restore-tree",
             "hold-toolgate",
+            "hold-gateway",
             "inspect-pi",
             "verify-vault",
             "verify-memory-key",
@@ -270,7 +282,7 @@ def main() -> None:
     )
     parser.add_argument("path", type=Path)
     parser.add_argument("--runtime", type=Path)
-    parser.add_argument("--require-sqlite", choices=["pi.db", "toolgate.db"])
+    parser.add_argument("--require-sqlite", choices=["pi.db", "toolgate.db", "auth.db"])
     args = parser.parse_args()
     if args.operation == "snapshot-tree":
         snapshot_tree(args.path, sys.stdout.buffer, args.require_sqlite)
@@ -278,6 +290,8 @@ def main() -> None:
         restore_tree(sys.stdin.buffer, args.path, preserve_owner=True)
     elif args.operation == "hold-toolgate":
         print(json.dumps(invalidate_approvals(args.path / "toolgate.db")))
+    elif args.operation == "hold-gateway":
+        print(json.dumps(invalidate_browser_sessions(args.path / "auth.db")))
     elif args.operation == "inspect-pi":
         print(json.dumps(unfinished_turns(args.path / "pi.db")))
     elif args.operation == "verify-vault":

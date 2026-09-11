@@ -19,18 +19,35 @@ x-service: &service
 
 services:
 
+  # Browser authority lives in a separate process and volume from the worker.
+  # Release prerequisite: PI_VERSION must contain the gateway package (see docs/browser-auth.md).
+  gateway:
+    <<: *service
+    image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
+    container_name: conker-gateway
+    command: ["python", "-m", "gateway", "serve"]
+    ports:
+      - "127.0.0.1:${CONKER_PORT:-8050}:8050"
+    environment:
+      GATEWAY_ORIGIN: ${GATEWAY_ORIGIN:-https://localhost:8050}
+      GATEWAY_DB_PATH: /auth/auth.db
+      GATEWAY_PI_URL: http://pi:8050
+      PI_GATEWAY_KEY: ${PI_GATEWAY_KEY:?run ./install.sh}
+      GATEWAY_TOOLGATE_URL: http://toolgate-api:8010
+      GATEWAY_TOOLGATE_OWNER_KEY: ${GATEWAY_TOOLGATE_OWNER_KEY:-}
+    volumes:
+      - gateway_data:/auth
+    depends_on: [pi]
+
   # --- the runtime ----------------------------------------------------------
-  # The only service the browser ever talks to. Everything the owner sees
-  # passes through here, which is what keeps provider keys, admin keys and host
-  # paths off the client.
+  # No published port or owner credentials. Only the gateway serves browsers.
   pi:
     <<: *service
     image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
     container_name: conker-pi
-    ports:
-      - "127.0.0.1:${CONKER_PORT:-8050}:8050"
     environment:
       PI_ADMIN_KEY: ${CONKER_ADMIN_KEY:?run ./install.sh - .env is missing or incomplete}
+      PI_GATEWAY_KEY_SHA256: ${PI_GATEWAY_KEY_SHA256:?run ./install.sh}
       PI_DB_PATH: /data/pi.db
       PI_OLLAMA_URL: http://ollama:11434
       PI_MODEL: ${CONKER_LOCAL_MODEL:-qwen3:4b}
@@ -215,6 +232,7 @@ services:
       - ${CONKER_BACKUP_DIR}:/backups:ro
 
 volumes:
+  gateway_data:
   pi_data:
   toolgate_data:
   postgres_data:

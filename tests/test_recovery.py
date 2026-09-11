@@ -110,6 +110,16 @@ class Engine:
             {"Destination": "/data/backups", "Type": "bind", "Source": str(backups)}
         ]
         toolgate_store(self.volumes["original-toolgate"])
+        if "original-gateway" in self.volumes:
+            database(self.volumes["original-gateway"] / "auth.db", """
+                CREATE TABLE owner(id INTEGER PRIMARY KEY, salt TEXT, verifier TEXT, generation INTEGER);
+                INSERT INTO owner VALUES(1,'salt','password-verifier',1);
+                CREATE TABLE sessions(token_hash TEXT PRIMARY KEY, id TEXT, csrf TEXT, authenticated INTEGER,
+                    generation INTEGER, created REAL, touched REAL, expires REAL);
+                INSERT INTO sessions VALUES('old-token','browser','csrf',1,1,1,1,99999999999);
+                CREATE TABLE login_attempts(at REAL, source TEXT);
+            """)
+            (self.volumes["original-gateway"] / "tls.key").write_text("local-tls-private-key")
         database(
             self.volumes["original-pi"] / "pi.db",
             """
@@ -216,6 +226,8 @@ class Engine:
                 data = json.dumps(
                     recovery_data.invalidate_approvals(path / "toolgate.db")
                 ).encode()
+            elif operation == "hold-gateway":
+                data = json.dumps(recovery_data.invalidate_browser_sessions(path / "auth.db")).encode()
             elif operation == "inspect-pi":
                 data = json.dumps(
                     recovery_data.unfinished_turns(path / "pi.db")
@@ -278,6 +290,15 @@ def test_snapshot_restores_vault_models_and_holds_actions(installed, tmp_path):
     assert state["vault_values_verified"] == 1
     assert state["memory_provider_key_verified"] is True
     assert state["invalidated_requests"] == ["approval"]
+    assert state["invalidated_browser_sessions"] == 1
+    gateway = engine.volumes[state["volumes"]["gateway"]]
+    assert (snapshot / "gateway.tar").is_file()
+    assert (gateway / "tls.key").read_text() == "local-tls-private-key"
+    with sqlite3.connect(gateway / "auth.db") as db:
+        assert db.execute("SELECT count(*) FROM sessions").fetchone()[0] == 0
+        assert db.execute("SELECT verifier,generation FROM owner").fetchone() == ("password-verifier", 2)
+    with sqlite3.connect(engine.volumes["original-gateway"] / "auth.db") as db:
+        assert db.execute("SELECT count(*) FROM sessions").fetchone()[0] == 1
     assert {turn["recovery_disposition"] for turn in state["unfinished_turns"]} == {
         "held_no_replay"
     }

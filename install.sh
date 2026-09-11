@@ -330,6 +330,20 @@ write_env() {
     [ -f "$ENV_FILE" ] && existing_env=1
 
     CONKER_ADMIN_KEY=$(keep_or_make CONKER_ADMIN_KEY)
+    PI_GATEWAY_KEY=$(keep_or_make PI_GATEWAY_KEY)
+    if command -v sha256sum >/dev/null 2>&1; then
+        PI_GATEWAY_KEY_SHA256=$(printf '%s' "$PI_GATEWAY_KEY" | sha256sum | cut -d ' ' -f1)
+    else
+        PI_GATEWAY_KEY_SHA256=$(printf '%s' "$PI_GATEWAY_KEY" | shasum -a 256 | cut -d ' ' -f1)
+    fi
+    # A service-issued owner credential must never be invented or replaced by an installer rerun.
+    GATEWAY_TOOLGATE_OWNER_KEY=${GATEWAY_TOOLGATE_OWNER_KEY:-}
+    [ ! -f "$ENV_FILE" ] || GATEWAY_TOOLGATE_OWNER_KEY=$(sed -n 's/^GATEWAY_TOOLGATE_OWNER_KEY=//p' "$ENV_FILE" | head -1)
+    GATEWAY_ORIGIN=${GATEWAY_ORIGIN:-}
+    if [ -z "$GATEWAY_ORIGIN" ] && [ -f "$ENV_FILE" ]; then
+        GATEWAY_ORIGIN=$(sed -n 's/^GATEWAY_ORIGIN=//p' "$ENV_FILE" | head -1)
+    fi
+    GATEWAY_ORIGIN=${GATEWAY_ORIGIN:-https://localhost:${CONKER_PORT:-8050}}
     TOOLGATE_ADMIN_KEY=$(keep_or_make TOOLGATE_ADMIN_KEY)
     # Kept only if it is still valid hex: a salt written by an earlier installer
     # that did not know the requirement would make the vault unreadable, and
@@ -376,6 +390,10 @@ CONKER_EMBEDDING_DIMENSION=${CONKER_EMBEDDING_DIMENSION:-1024}
 
 # --- generated. You never need to read, type or remember any of these. ---
 CONKER_ADMIN_KEY=$CONKER_ADMIN_KEY
+PI_GATEWAY_KEY=$PI_GATEWAY_KEY
+PI_GATEWAY_KEY_SHA256=$PI_GATEWAY_KEY_SHA256
+GATEWAY_ORIGIN=$GATEWAY_ORIGIN
+GATEWAY_TOOLGATE_OWNER_KEY=$GATEWAY_TOOLGATE_OWNER_KEY
 TOOLGATE_ADMIN_KEY=$TOOLGATE_ADMIN_KEY
 TOOLGATE_VAULT_SALT=$TOOLGATE_VAULT_SALT
 TOOLGATE_CALLBACK_SECRET=$TOOLGATE_CALLBACK_SECRET
@@ -543,7 +561,7 @@ top_level_status() {
 # never do.
 wait_for_health() {
     step "Checking what actually came up"
-    local names=(pi toolgate memorygate systemgate embeddings)
+    local names=(gateway toolgate memorygate systemgate embeddings)
     local ports=(8050 8010 8020 8040 8030)
     local labels=("Conker" "Tools" "Memory" "System" "Embeddings")
     local deadline=$(( $(date +%s) + 180 ))
@@ -552,10 +570,14 @@ wait_for_health() {
     local i
     for i in "${!names[@]}"; do
         local port="${ports[$i]}"
-        [ "${names[$i]}" = "pi" ] && port="${CONKER_PORT:-8050}"
+        [ "${names[$i]}" = "gateway" ] && port="${CONKER_PORT:-8050}"
         local body="" status=""
         while [ "$(date +%s)" -lt "$deadline" ]; do
-            body=$(curl -fsS -m 3 "http://127.0.0.1:$port/health" 2>/dev/null || true)
+            if [ "${names[$i]}" = "gateway" ]; then
+                body=$(compose exec -T gateway python -m gateway health 2>/dev/null || true)
+            else
+                body=$(curl -fsS -m 3 "http://127.0.0.1:$port/health" 2>/dev/null || true)
+            fi
             [ -n "$body" ] && break
             sleep 2
         done
@@ -587,7 +609,7 @@ wait_for_health() {
 # ============================================================================
 
 finish() {
-    local url="http://127.0.0.1:${CONKER_PORT:-8050}"
+    local url="$GATEWAY_ORIGIN"
 
     if [ "${#DEGRADED[@]}" -gt 0 ]; then
         step "Conker is running, with some services degraded"
@@ -604,6 +626,9 @@ finish() {
 
     say ""
     say "  ${BOLD}Open:${OFF}  ${BLUE}${url}${OFF}"
+    info "First set your browser password on this host: ./conker auth setup"
+    info "Trust this installation's local TLS certificate before signing in; see docs/browser-auth.md."
+    info "This release provides the auth API; dashboard screens are a separate checkpoint."
     say ""
     say "  ${BOLD}Your backups are in:${OFF}"
     say "     ${BOLD}${CONKER_BACKUP_DIR}${OFF}"

@@ -28,6 +28,7 @@ from recovery_data import RecoveryError, safe_member, validate_archive
 FORMAT = "conker-snapshot-1"
 HOLD_FILE = ".conker-recovery.json"
 SERVICES = {
+    "gateway",
     "pi",
     "toolgate",
     "memorygate",
@@ -39,6 +40,7 @@ SERVICES = {
     "searxng",
 }
 STORES = {
+    "gateway": "/auth",
     "pi": "/data",
     "toolgate": "/var/lib/toolgate",
     "systemgate": "/app/data",
@@ -133,12 +135,14 @@ def verify_snapshot(directory: Path) -> dict:
             "Unsupported or incomplete snapshot; use a complete conker-snapshot-1 backup."
         )
     files = manifest.get("files", {})
-    if not REQUIRED <= files.keys() or files != inventory(directory):
+    has_gateway = "gateway" in manifest.get("images", {})
+    required_files = REQUIRED if has_gateway else REQUIRED - {"gateway.tar"}
+    if not required_files <= files.keys() or files != inventory(directory):
         raise RecoveryError(
             "Snapshot files are missing, unexpected, or changed; obtain an intact backup."
         )
     images = manifest.get("images", {})
-    if images.keys() != SERVICES or any(
+    if images.keys() not in (SERVICES, SERVICES - {"gateway"}) or any(
         not re.fullmatch(r"sha256:[0-9a-f]{64}", image.get("id", ""))
         for image in images.values()
     ):
@@ -146,7 +150,11 @@ def verify_snapshot(directory: Path) -> dict:
             "Snapshot image identities are invalid; use an intact version manifest."
         )
     stores = manifest.get("stores", {})
-    if not (STORES.keys() | {"memorygate-backups"}) <= stores.keys() or any(
+    expected_stores = STORES.keys() if has_gateway else STORES.keys() - {"gateway"}
+    captured_config = json.loads((directory / "config/compose.json").read_text(encoding="utf-8"))
+    if captured_config.get("services", {}).keys() != images.keys():
+        raise RecoveryError("Captured services and image inventory disagree; obtain an intact snapshot.")
+    if not (expected_stores | {"memorygate-backups"}) <= stores.keys() or any(
         name not in STORES
         and name != "memorygate-backups"
         and not re.fullmatch(r"extra-[a-z]+-[0-9]+", name)
@@ -168,7 +176,7 @@ def verify_snapshot(directory: Path) -> dict:
             )
     for name in files:
         if name.endswith(".tar"):
-            required = {"pi.tar": "pi.db", "toolgate.tar": "toolgate.db"}.get(name)
+            required = {"pi.tar": "pi.db", "toolgate.tar": "toolgate.db", "gateway.tar": "auth.db"}.get(name)
             validate_archive(directory / name, required)
     return manifest
 
@@ -360,12 +368,12 @@ def _backup(root: Path, destination: Path | None, docker: Docker) -> Path:
         str(root / "docker-compose.yml"),
     ]
     config = docker.json(*compose, "config", "--format", "json")
-    if config["services"].keys() != SERVICES:
+    if config["services"].keys() not in (SERVICES, SERVICES - {"gateway"}):
         raise RecoveryError(
             "Unknown Compose services; inventory their authoritative stores before backup."
         )
     containers, runtime, mounts, images = {}, {}, {}, {}
-    for service in sorted(SERVICES):
+    for service in sorted(config["services"]):
         ids = (
             docker.run(*compose, "ps", "--all", "--quiet", service)
             .stdout.decode()
@@ -392,6 +400,7 @@ def _backup(root: Path, destination: Path | None, docker: Docker) -> Path:
             "labels": image["Config"].get("Labels") or {},
         }
     expected = {
+        ("gateway", "GATEWAY_DB_PATH"): "/auth/auth.db",
         ("pi", "PI_DB_PATH"): "/data/pi.db",
         ("toolgate", "TOOLGATE_DATA_DIR"): "/var/lib/toolgate",
         ("toolgate", "TOOLGATE_ENV_PATH"): "/var/lib/toolgate/.env",
@@ -404,6 +413,8 @@ def _backup(root: Path, destination: Path | None, docker: Docker) -> Path:
         ("postgres", "PGDATA"): "/var/lib/postgresql/data",
     }
     for (service, key), value in expected.items():
+        if service not in runtime:
+            continue
         if runtime[service].get(key, value) != value:
             raise RecoveryError(
                 f"Custom {key} is not covered; add its recovery mapping before backup."
@@ -419,13 +430,16 @@ def _backup(root: Path, destination: Path | None, docker: Docker) -> Path:
             raise RecoveryError(
                 "MemoryGate uses an unmapped database endpoint; map that authoritative store before backup."
             )
-    for service, path in STORES.items():
+    store_paths = {name: path for name, path in STORES.items() if name in containers}
+    for service, path in store_paths.items():
         mounts[service] = mount_at(containers[service], path)
     mounts["pi"]["database"] = "pi.db"
     mounts["toolgate"]["database"] = "toolgate.db"
+    if "gateway" in mounts:
+        mounts["gateway"]["database"] = "auth.db"
     mounts["memorygate-backups"] = mount_at(containers["memorygate"], "/data/backups")
     stores = {
-        name: {"service": name, "destination": path} for name, path in STORES.items()
+        name: {"service": name, "destination": path} for name, path in store_paths.items()
     }
     stores["memorygate-backups"] = {
         "service": "memorygate",
@@ -708,6 +722,12 @@ def restore(snapshot: Path, destination: Path, docker: Docker) -> dict:
                     {"type": "volume", "source": state["volumes"][store]},
                     input=source,
                 )
+        if "gateway" in manifest["stores"]:
+            state.update(json.loads(helper(
+                docker, images["pi"]["id"], "hold-gateway",
+                {"type": "volume", "source": state["volumes"]["gateway"]},
+            ).stdout))
+            write_json(state_path, state)
         # Runtime recovery material gets its own volume; never recreate the
         # original container before extracting this currently unmounted key.
         runtime_tar = destination / "memorygate-runtime.tar"
