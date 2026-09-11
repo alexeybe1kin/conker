@@ -85,6 +85,16 @@ def test_compose_cannot_give_worker_owner_credentials_or_auth_storage(tmp_path):
     )
     assert not any(mount["source"] == auth_volume for mount in pi["volumes"])
     assert not any("ADMIN_KEY" in key for key in gateway["environment"])
+    assert set(gateway["cap_drop"]) == {"ALL"} and set(pi["cap_drop"]) == {"ALL"}
+    assert "owner_control" not in pi["networks"]
+    assert "owner_control" in gateway["networks"]
+    assert config["networks"]["owner_control"]["internal"] is True
+    assert (
+        gateway["environment"]["GATEWAY_TOOLGATE_URL"] == "http://toolgate-owner:8010"
+    )
+    assert (
+        "toolgate-owner" in services["toolgate"]["networks"]["owner_control"]["aliases"]
+    )
 
 
 def test_missing_gateway_database_cannot_produce_success(installed):

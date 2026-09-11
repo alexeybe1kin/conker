@@ -25,6 +25,9 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
     container_name: conker-gateway
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [conker_net, owner_control]
     command: ["python", "-m", "gateway", "serve"]
     ports:
       - "127.0.0.1:${CONKER_PORT:-8050}:8050"
@@ -33,7 +36,7 @@ services:
       GATEWAY_DB_PATH: /auth/auth.db
       GATEWAY_PI_URL: http://pi:8050
       PI_GATEWAY_KEY: ${PI_GATEWAY_KEY:?run ./install.sh}
-      GATEWAY_TOOLGATE_URL: http://toolgate-api:8010
+      GATEWAY_TOOLGATE_URL: http://toolgate-owner:8010
       GATEWAY_TOOLGATE_OWNER_KEY: ${GATEWAY_TOOLGATE_OWNER_KEY:-}
     volumes:
       - gateway_data:/auth
@@ -45,6 +48,8 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/pi:${PI_VERSION}
     container_name: conker-pi
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     environment:
       PI_ADMIN_KEY: ${CONKER_ADMIN_KEY:?run ./install.sh - .env is missing or incomplete}
       PI_GATEWAY_KEY_SHA256: ${PI_GATEWAY_KEY_SHA256:?run ./install.sh}
@@ -69,6 +74,10 @@ services:
     <<: *service
     image: ghcr.io/alexeybe1kin/toolgate:${TOOLGATE_VERSION}
     container_name: toolgate-api
+    networks:
+      conker_net: {}
+      owner_control:
+        aliases: [toolgate-owner]
     ports:
       - "127.0.0.1:8010:8010"
     environment:
@@ -241,5 +250,8 @@ volumes:
   systemgate_data:
 
 networks:
+  # Keep the plaintext service credential off the worker's bridge.
+  owner_control:
+    internal: true
   conker_net:
     name: conker_net

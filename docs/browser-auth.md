@@ -6,6 +6,8 @@ channel is still a separate dependency. The installer refuses a stale Pi image.
 
 The browser connects to a separate HTTPS gateway. The Pi execution worker has
 neither the owner's ToolGate approval credential nor access to the gateway volume.
+The gateway sends approval traffic to ToolGate on a separate internal Docker
+network that Pi does not join. Pi and the gateway drop Linux capabilities.
 The gateway volume contains the password verifier, sessions and TLS material and
 must be captured by backup. Restore must invalidate sessions before any gateway
 can be started. Existing service admin keys remain host recovery credentials.

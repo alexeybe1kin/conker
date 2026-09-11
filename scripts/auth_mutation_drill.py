@@ -15,6 +15,13 @@ RESTORE = (
 )
 CASES = [
     (
+        "worker-joins-owner-transport",
+        "docker-compose.yml",
+        "    container_name: conker-pi",
+        "    container_name: conker-pi\n    networks: [conker_net, owner_control]",
+        DEPLOYMENT,
+    ),
+    (
         "gateway-store-omitted",
         "scripts/recovery.py",
         '    "gateway": "/auth",\n',
