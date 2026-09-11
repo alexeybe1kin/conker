@@ -67,6 +67,13 @@ is nearly free and stays · the model is 4–5× the entire rest of the stack.
 | **C7** | **Four screens have no backend** | Proposals, Journal, Jobs, half of Memory. Missing backend must be **visibly unavailable**, never a hollow screen. |
 | **C8** | **README oversells** | Describes nine screens and a nightly engine that do not exist. Truthful status, broken on the front page. |
 
+## E. Found while verifying
+
+| # | | |
+|---|---|---|
+| **E1** | **The admission filter is narrow in *both* languages** | Verified after the bilingual fix landed. "I prefer to train before school" now scores 0.30 in English and Russian, so the audit's case is genuinely closed. But "I train judo on Tuesdays" and "My exam is on the fourteenth" score **0.00 in both** — a routine and a deadline, admitted in neither language. Those are exactly the facts a life engine has to keep. Separately, "I do not like early mornings" scores 0.00 in English and 0.30 in Russian, so the asymmetry now runs the other way for negative preferences. This is a coverage problem, not a language problem, and it was invisible while the language bug hid it. |
+| **E2** | **MemoryGate's bootstrap reactivates revoked read keys** | Same class as the ToolGate defect fixed in `6da9b4e`: a key the owner revoked comes back on restart. Reproduced by the agent doing the memory work; left separate rather than folded into an unrelated patch. |
+
 ## D. Cheap
 
 | # | |
