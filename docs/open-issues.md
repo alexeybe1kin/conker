@@ -105,6 +105,23 @@ works; no permanent-lockout path found.
 | **F11** | **Low — injection persistence** | Model-written summaries are promoted into **system messages** (`loop.py:178`, `:139`) — higher trust than they earned. Recalled memory gets an "untrusted evidence" label; summaries do not. |
 | **F12** | **Low — maintenance** | MemoryGate pins `cryptography 46.0.1`, before the 48.0.1 wheel fix for CVE-2026-34180 (bundled OpenSSL) and a PKCS#7 oracle. The vault uses Fernet, not PKCS#7; no exploit demonstrated. Bump it. |
 
+## G. Golden-standard hardening (2026-09-12)
+
+Checked against Docker's own compose hardening reference. These are not exploits the audit found;
+they are the defence-in-depth the containers are missing. Verified against
+https://github.com/docker/docs compose-file security guidance.
+
+| # | Gap | Golden standard |
+|---|---|---|
+| **G1** | **Every service runs as root** — no `USER` in any Dockerfile, no `user:` in compose. | Run as a non-root UID. A container breakout from a root process is host-root; from an unprivileged one it is not. |
+| **G2** | **No memory limits** on any service. | `deploy.resources.limits.memory` per service. **This is also the fix for the host OOM that has killed runs repeatedly** — nothing currently caps what a container takes. Ollama needs the most; the rest measured well under 256M. |
+| **G3** | `cap_drop`/`no-new-privileges`/`security_opt` are on only 2 of 9 services (the gateway/ToolGate pair). | `cap_drop: [ALL]`, add back only `NET_BIND_SERVICE` where a low port is bound, `security_opt: [no-new-privileges]` on **every** service. |
+| **G4** | No `read_only` root filesystem. | `read_only: true` with `tmpfs` for the few writable paths; data lives in named volumes already. |
+| **G5** | No `pids_limit`. | `pids_limit` per service caps fork-bomb blast radius. |
+
+None of these weakens anything in F0; all are additive. G1 and G2 are the two that matter most — G2
+because it stops the OOM, G1 because it is the single highest-value container-hardening step.
+
 ## D. Cheap
 
 | # | |
