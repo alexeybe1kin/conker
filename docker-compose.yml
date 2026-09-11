@@ -199,6 +199,12 @@ services:
       SYSTEMGATE_ADMIN_KEY: ${SYSTEMGATE_ADMIN_KEY:?run ./install.sh}
       # psutil honours no environment variable for this, so the name is ours and
       # the assignment happens in SystemGate's own code.
+      # SystemGate looked under ~/systemgate-backups while compose mounted them
+      # at /backups, so it reported on a directory that did not exist - and then
+      # treated any directory as a backup, picking "latest" by modification
+      # time. An incomplete snapshot could be presented as the newest recovery
+      # point, and a good one hidden. It now verifies manifests and hashes.
+      SYSTEMGATE_BACKUP_ROOT: /backups
       SYSTEMGATE_PROCFS_PATH: /host/proc
       SYSTEMGATE_DISK_PATH: /host/root
     volumes:
