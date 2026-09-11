@@ -6,6 +6,11 @@ which module versions a release pins.
 
 ## Unreleased
 
+- **Design system foundation:** React/TypeScript/Vite package with Tailwind v4 OKLCH
+  semantic pairs, registry-sourced Radix primitives, shared eight-state status with evidence
+  validation and aging, theme controls, fixtures and browser/mutation tests. No product
+  screens or backend calls. Cross-platform dependency-lock validation remains open.
+
 - **Backup and held recovery (B1/B2):** replace live SQLite file copying and false-success
   backups with coordinated snapshots, required-store checks, vault-key verification, file hashes,
   and exact image identities. Capture ToolGate's complete volume and MemoryGate's otherwise

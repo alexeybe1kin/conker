@@ -1,11 +1,14 @@
 import { test, expect, type Locator } from "@playwright/test"
 
-const colors = (locator: Locator) => locator.evaluate((element) => {
-  const style = getComputedStyle(element)
-  return { background: style.backgroundColor, foreground: style.color }
-})
+const colors = (locator: Locator) =>
+  locator.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { background: style.backgroundColor, foreground: style.color }
+  })
 
-test.beforeEach(async ({ page }) => { await page.goto("/") })
+test.beforeEach(async ({ page }) => {
+  await page.goto("/")
+})
 
 test("the root toggle changes rendered colors and reverses them", async ({ page }) => {
   const card = page.locator('[data-slot="card"]').first()
@@ -16,7 +19,9 @@ test("the root toggle changes rendered colors and reverses them", async ({ page 
   expect(await colors(card)).toEqual(light)
 })
 
-test("nested theme changes both built-in and status pairs without changing root", async ({ page }) => {
+test("nested theme changes both built-in and status pairs without changing root", async ({
+  page,
+}) => {
   const surface = page.getByTestId("nested-surface")
   const status = surface.locator('[data-slot="badge"]')
   const lightSurface = await colors(surface)
@@ -33,9 +38,23 @@ test("nested theme changes both built-in and status pairs without changing root"
 })
 
 test("all eight labels render; empty and failure differ beyond color", async ({ page }) => {
-  for (const state of ["live", "degraded", "offline", "stale", "blocked", "empty", "planned", "unknown"]) {
-    await expect(page.locator(`[data-example="${state}"] [data-slot="status"]`)).toHaveAttribute("data-state", state)
-    await expect(page.locator(`[data-example="${state}"] [data-slot="badge"]`)).toContainText(state[0].toUpperCase() + state.slice(1))
+  for (const state of [
+    "live",
+    "degraded",
+    "offline",
+    "stale",
+    "blocked",
+    "empty",
+    "planned",
+    "unknown",
+  ]) {
+    await expect(page.locator(`[data-example="${state}"] [data-slot="status"]`)).toHaveAttribute(
+      "data-state",
+      state,
+    )
+    await expect(page.locator(`[data-example="${state}"] [data-slot="badge"]`)).toContainText(
+      state[0].toUpperCase() + state.slice(1),
+    )
   }
   const empty = page.locator('[data-example="empty"] [data-slot="badge"]')
   const failed = page.locator('[data-example="degraded"] [data-slot="badge"]')
@@ -45,10 +64,15 @@ test("all eight labels render; empty and failure differ beyond color", async ({ 
 })
 
 test("configuration cannot claim live and a checked value ages into stale", async ({ page }) => {
-  await expect(page.getByRole("region", { name: "Evidence validation" }).locator('[data-slot="status"]')).toHaveAttribute("data-state", "unknown")
+  await expect(
+    page.getByRole("region", { name: "Evidence validation" }).locator('[data-slot="status"]'),
+  ).toHaveAttribute("data-state", "unknown")
   await page.clock.install()
   await page.clock.fastForward(65_000)
-  await expect(page.locator('[data-example="live"] [data-slot="status"]')).toHaveAttribute("data-state", "stale")
+  await expect(page.locator('[data-example="live"] [data-slot="status"]')).toHaveAttribute(
+    "data-state",
+    "stale",
+  )
   await expect(page.locator('[data-example="live"] time')).toContainText("1m ago")
 })
 
@@ -75,16 +99,65 @@ test("sheet closes by keyboard, tabs navigate, field error is associated", async
   await expect(page.getByRole("button", { name: "Open sheet" })).toBeFocused()
   await page.getByRole("tab", { name: "Table", exact: true }).focus()
   await page.keyboard.press("ArrowRight")
-  await expect(page.getByRole("tab", { name: "Loading", exact: true })).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("tab", { name: "Loading", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  )
   await expect(page.getByRole("status", { name: "Loading fixture" })).toBeVisible()
-  await expect(page.getByRole("textbox", { name: "Required name" })).toHaveAccessibleDescription("Enter a name.")
+  await expect(page.getByRole("textbox", { name: "Required name" })).toHaveAccessibleDescription(
+    "Enter a name.",
+  )
 })
 
 test("fixtures make no backend or external requests", async ({ page }) => {
   const requests: string[] = []
-  page.on("request", (request) => { if (["fetch", "xhr"].includes(request.resourceType()) || !request.url().startsWith("http://127.0.0.1:4178/")) requests.push(request.url()) })
+  page.on("request", (request) => {
+    if (
+      ["fetch", "xhr"].includes(request.resourceType()) ||
+      !request.url().startsWith("http://127.0.0.1:4178/")
+    )
+      requests.push(request.url())
+  })
   await page.reload()
   await page.getByRole("button", { name: "Use dark theme" }).click()
   await page.getByRole("button", { name: "Open dialog", exact: true }).click()
   expect(requests).toEqual([])
+})
+
+test("status pairs remain readable in both themes and fit a narrow viewport", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  for (const theme of ["light", "dark"]) {
+    if (theme === "dark") await page.getByRole("button", { name: "Use dark theme" }).click()
+    await expect
+      .poll(async () =>
+        page.locator('[data-example] [data-slot="badge"]').evaluateAll((elements) => {
+          const canvas = document.createElement("canvas")
+          canvas.width = canvas.height = 1
+          const context = canvas.getContext("2d")!
+          function luminance(color: string) {
+            context.clearRect(0, 0, 1, 1)
+            context.fillStyle = color
+            context.fillRect(0, 0, 1, 1)
+            const values = Array.from(context.getImageData(0, 0, 1, 1).data)
+              .slice(0, 3)
+              .map((channel) => {
+                const value = channel / 255
+                return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+              })
+            return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722
+          }
+          return Math.min(
+            ...elements.map((element) => {
+              const style = getComputedStyle(element)
+              const a = luminance(style.color)
+              const b = luminance(style.backgroundColor)
+              return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+            }),
+          )
+        }),
+      )
+      .toBeGreaterThanOrEqual(4.5)
+  }
+  await page.setViewportSize({ width: 375, height: 812 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })

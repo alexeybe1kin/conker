@@ -96,8 +96,8 @@ overrides `border`/`input` with alpha (`oklch(1 0 0 / 10%)`) rather than a solid
 
 ### Adding our own tokens
 
-Conker needs tokens shadcn does not ship — the status vocabulary (`ok`, `degraded`, `unavailable`,
-`not_configured`, `unknown`) from `principles.md` §1 is a design requirement, not a nicety. The
+Conker needs tokens shadcn does not ship — the status vocabulary (`live`, `degraded`, `offline`, `stale`,
+`blocked`, `empty`, `planned`, `unknown`) from `principles.md` §1 is a design requirement, not a nicety. The
 supported way is identical to the built-ins:
 
 ```css
@@ -137,8 +137,8 @@ function Button({ className, variant = "default", size = "default", asChild = fa
   into a composed component without a class contract. Also the honest selector for tests.
 - **`data-variant` / `data-size` mirror the props**, so state is inspectable in the DOM.
 - **`asChild` → `Slot.Root`** from the unified `radix-ui` package, not `@radix-ui/react-slot`.
-- **`cva` for variants, `cn` for merging.** `cn` is now its own registry item (`dependencies:
-  ["cn", "radix-ui"]`), not assumed to exist at `@/lib/utils`.
+- **`cva` for variants, `cn` for merging.** `cn` is an npm dependency (`dependencies:
+  ["cn", "radix-ui"]`), imported from `"cn"`, not assumed to exist at `@/lib/utils`.
 - Accessibility is in the base string, not bolted on: `focus-visible:ring-[3px] ring-ring/50`,
   `aria-invalid:border-destructive`, `disabled:pointer-events-none disabled:opacity-50`.
 - Icon sizing by attribute selector: `[&_svg:not([class*='size-'])]:size-4` — a child SVG gets a
@@ -168,7 +168,7 @@ shareable code.
 
 ---
 
-## 5. Radix or Base UI — an open decision, with a real tension
+## 5. Radix or Base UI — resolved by ADR-0009
 
 **shadcn made Base UI the default for new projects in July 2026**
 ([changelog](https://ui.shadcn.com/docs/changelog/2026-07-base-ui-default)), while stating Radix
@@ -195,7 +195,7 @@ the same abstraction either way, which is precisely why it is safe to revisit wh
 `1.0.0` final. Betting a system meant to outlive its author on an RC that has not moved in eight
 weeks is the trade this project has consistently declined.
 
-This needs an ADR before the first component is written.
+Resolved by [ADR-0009](../adr/0009-radix-primitives-for-now.md): Radix.
 
 ---
 
@@ -209,3 +209,31 @@ This needs an ADR before the first component is written.
 4. **Current anatomy**: no `forwardRef`, `data-slot` everywhere, `cva` + `cn`.
 5. **The design system ships as a registry**, so a fork consumes it the way it consumes shadcn.
 6. **Radix for now**, written down as a decision rather than a default.
+
+
+## 7. Implementation check — 2026-09-11
+
+The foundation now lives in [`design-system/`](../../design-system/README.md).
+Three details needed correction when using CLI 4.21.0 and the actual registry:
+
+- The custom status vocabulary above previously listed five transport-style
+  statuses. The UI contract is the eight states in `principles.md` and `CONTEXT.md`.
+- A top-level `base` property in `components.json` is rejected by the CLI's strict
+  `rawConfigSchema` as an unrecognized key. `--base radix` is an initialization
+  option; the generated **style** selects the primitive family. This package uses
+  `style: "new-york"` with Tailwind v4, resolving to `new-york-v4`, whose primitives
+  import `radix-ui`. Changing a style affects later imports; existing component
+  files still require migration.
+- `cn` in registry `dependencies` is an **npm package**, imported with
+  `import { cn } from "cn"`. It is not a `registryDependencies` item. The package
+  supplies class merging; no local `utils.ts` copy is needed for these sources.
+
+The upstream destructive foreground really is `text-white`; dialog and sheet
+also use `bg-black/50`. Conker replaces them with semantic foreground/overlay
+roles and removes explicit dark color overrides so palette pairs own both themes.
+
+The `@theme inline` correction held in Chromium: root and nested dark theme
+changes alter computed surface and status foreground/background colors. Replacing
+`@theme inline` with non-inline `@theme` makes the nested-theme behavioral test
+fail. See the package's repeatable mutation drill. This establishes the CSS
+contract; it does not validate a backend health check or a Linux dependency install.

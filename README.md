@@ -100,6 +100,12 @@ Precedence is the same everywhere: **environment → file → default**.
 - [`docs/roadmap.md`](docs/roadmap.md) — what is built, and in what order.
 - [`docs/adr/`](docs/adr/) — why each hard-to-reverse decision was made, and what it cost.
 
+## Frontend foundation
+
+The [design system](design-system/README.md) contains semantic tokens, Radix components,
+truthful status and a fixture gallery. It makes no backend calls and is not a dashboard shell.
+See its README for validation and the outstanding cross-platform dependency-lock check.
+
 ## Licence
 
 MIT.
