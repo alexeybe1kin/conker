@@ -10,6 +10,8 @@ type PreviewState = {
   events: PreviewEvent[]; record: (summary: string, kind: string, to: string) => void;
   memoryEdits: Record<string, string>; forgottenMemory: string[];
   correctMemory: (id: string, text: string) => void; forgetMemory: (id: string) => void;
+  jobState: Record<string, { paused: boolean; runs: number }>;
+  updateJob: (id: string, state: { paused: boolean; runs: number }) => void;
 }
 const Context = createContext<PreviewState | null>(null)
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -19,8 +21,10 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<PreviewEvent[]>([])
   const [memoryEdits, setMemoryEdits] = useState<Record<string, string>>({})
   const [forgottenMemory, setForgottenMemory] = useState<string[]>([])
+  const [jobState, setJobState] = useState<Record<string, { paused: boolean; runs: number }>>({})
   function record(summary: string, kind: string, to: string) { setEvents(old => [{ id: crypto.randomUUID(), actor: "You", summary, kind, to, date: "2026-09-12" }, ...old]) }
-  return <Context value={{ events, record, memoryEdits, forgottenMemory,
+  return <Context value={{ events, record, memoryEdits, forgottenMemory, jobState,
+    updateJob: (id, state) => setJobState(old => ({ ...old, [id]: state })),
     correctMemory: (id, text) => { setMemoryEdits(old => ({ ...old, [id]: text })); record("Corrected a fixture memory", "Memory", `/memory/${id}`) },
     forgetMemory: id => { setForgottenMemory(old => [...old, id]); record("Forgot a fixture memory; tombstone retained", "Memory", `/memory/${id}`) },
     decisions, decide: (id, decision) => { if (!decisions[id]) { setDecisions(old => ({ ...old, [id]: decision })); record(`${decision.charAt(0).toUpperCase() + decision.slice(1)} ${id} · preview only`, "Decision", `/inbox/${id}`) } }, sessions,

@@ -237,6 +237,18 @@ blockquote { margin: 0; border-left: 2px solid var(--border); padding-left: 13px
 .journal-summary strong { font-size: .87rem; font-weight: 500; line-height: 1.6; }
 .journal-summary small { font-size: .69rem; font-weight: 400; color: var(--muted-foreground); }
 .journal-detail { display: flex; flex-direction: column; align-items: flex-start; gap: 15px; padding: 0 20px 25px 106px; font-size: .81rem; line-height: 1.8; }
+.jobs-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.jobs-list > [data-slot="card"] { min-width: 0; box-shadow: none; }
+.job-title { display: flex; align-items: center; gap: 10px; } .job-title svg { width: 19px; height: 19px; color: var(--muted-foreground); }
+.job-timing { display: flex; gap: 30px; padding: 15px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.job-timing > div { display: flex; flex-direction: column; gap: 7px; }
+.job-timing span { font-size: .67rem; color: var(--muted-foreground); }
+.job-timing strong { font-size: .8rem; font-weight: 500; }
+.job-result p:not(.eyebrow) { font-size: .84rem; line-height: 1.8; margin-bottom: 10px; }
+.job-result .eyebrow { font-size: .61rem; margin-bottom: 8px; }
+.job-details { padding-top: 20px; }
+.job-actions { gap: 8px; flex-wrap: wrap; margin-top: auto; } .job-actions .fine-print { width: 100%; margin-top: 8px; }
+@media (max-width: 1000px) { .jobs-list { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .timeline-icon { display: none; } .journal-entry > summary { gap: 12px; } .journal-detail { padding-left: 50px; } }
 @media (max-width: 1000px) { .memory-list { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .two-column, .agent-grid, .contract-grid { grid-template-columns: 1fr; } }
