@@ -180,7 +180,7 @@ follow-ups. Owners must stop active workers and verify the provider outcome befo
 attesting that an action did not execute. Review the ToolGate spending contract for
 the endpoint and its evidence requirements.
 
-| **B12** | **The pinned Pi image predates the gateway code** | The gateway runs from `ghcr.io/alexeybe1kin/pi` but the `gateway/` module landed on main today and was never published as a new Pi image, so `conker-gateway` restart-loops with `No module named gateway`. Browser auth cannot come up until a new Pi image is tagged and `versions.env` bumped. This is the deployment half of B4. |
+| **B12** | ~~The pinned Pi image predates the gateway code~~ **FIXED by the 0.4.0 release** | The gateway runs from `ghcr.io/alexeybe1kin/pi` but the `gateway/` module landed on main today and was never published as a new Pi image, so `conker-gateway` restart-loops with `No module named gateway`. Browser auth cannot come up until a new Pi image is tagged and `versions.env` bumped. This is the deployment half of B4. |
 
 ## D. Cheap
 
