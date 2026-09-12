@@ -188,6 +188,17 @@ h2 > svg { width: 18px; height: 18px; color: var(--muted-foreground); }
 .path-label { display: block; font: .74rem/1.7 var(--type-mono); padding: 12px; border-radius: var(--radius); background: var(--muted); overflow-wrap: anywhere; }
 .body-copy { font-size: .86rem; line-height: 1.8; color: var(--muted-foreground); }
 .inline-notice { font-size: .8rem; padding: 12px 16px; margin-bottom: 20px; background: var(--accent); border-radius: var(--radius); color: var(--accent-foreground); }
+.two-column, .agent-grid, .contract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.agent-grid > *, .contract-grid > *, .two-column > * { min-width: 0; box-shadow: none; }
+.agent-identity { display: flex; align-items: center; gap: 15px; }
+.agent-identity [data-slot="card-description"] { margin-top: 7px; }
+.agent-avatar { display: inline-flex; align-items: center; justify-content: center; width: 47px; height: 47px; border-radius: 14px; background: var(--accent); color: var(--accent-foreground); font-size: 1.3rem; }
+.section-intro { margin: -5px 0 25px; }
+.section-gap { margin-top: 30px; }
+.activity-line { font-size: .8rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.grant-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0; font-size: .8rem; padding: 15px; border: 1px solid var(--border); border-radius: var(--radius); }
+.grant-delta svg { width: 16px; } .dialog-actions { margin-top: 24px; }
+@media (max-width: 900px) { .two-column, .agent-grid, .contract-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1000px) { .service-row { grid-template-columns: 140px 1fr; } .version-badge { grid-column: 1; justify-self: start; } .system-bottom { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .vitals-grid { grid-template-columns: 1fr; } .vital-card { flex-direction: row; align-items: center; gap: 0; } .vital-card > * { width: 50%; } .system-notice { align-items: flex-start; flex-direction: column; } .service-row { grid-template-columns: 1fr auto; } .service-evidence { grid-row: 2; grid-column: 1 / -1; } .version-badge { grid-row: 1; grid-column: 2; } }
 @media (max-width: 760px) {
