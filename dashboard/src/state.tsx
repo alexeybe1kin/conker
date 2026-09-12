@@ -2,17 +2,28 @@ import { createContext, useContext, useState, type ReactNode } from "react"
 import { sessionFixtures, type Session } from "./fixtures/chat"
 
 type Decision = "approved" | "denied" | "declined" | "accepted"
+export type PreviewEvent = { id: string; actor: string; summary: string; kind: string; to: string; date: string }
 type PreviewState = {
   decisions: Record<string, Decision>; decide: (id: string, decision: Decision) => void;
   sessions: Session[]; addSession: (session: Session) => void;
   signedOut: boolean; signOut: () => void; signIn: () => void;
+  events: PreviewEvent[]; record: (summary: string, kind: string, to: string) => void;
+  memoryEdits: Record<string, string>; forgottenMemory: string[];
+  correctMemory: (id: string, text: string) => void; forgetMemory: (id: string) => void;
 }
 const Context = createContext<PreviewState | null>(null)
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const [decisions, setDecisions] = useState<Record<string, Decision>>({})
   const [sessions, setSessions] = useState(sessionFixtures)
   const [signedOut, setSignedOut] = useState(false)
-  return <Context value={{ decisions, decide: (id, decision) => setDecisions(old => old[id] ? old : { ...old, [id]: decision }), sessions,
+  const [events, setEvents] = useState<PreviewEvent[]>([])
+  const [memoryEdits, setMemoryEdits] = useState<Record<string, string>>({})
+  const [forgottenMemory, setForgottenMemory] = useState<string[]>([])
+  function record(summary: string, kind: string, to: string) { setEvents(old => [{ id: crypto.randomUUID(), actor: "You", summary, kind, to, date: "2026-09-12" }, ...old]) }
+  return <Context value={{ events, record, memoryEdits, forgottenMemory,
+    correctMemory: (id, text) => { setMemoryEdits(old => ({ ...old, [id]: text })); record("Corrected a fixture memory", "Memory", `/memory/${id}`) },
+    forgetMemory: id => { setForgottenMemory(old => [...old, id]); record("Forgot a fixture memory; tombstone retained", "Memory", `/memory/${id}`) },
+    decisions, decide: (id, decision) => { if (!decisions[id]) { setDecisions(old => ({ ...old, [id]: decision })); record(`${decision.charAt(0).toUpperCase() + decision.slice(1)} ${id} · preview only`, "Decision", `/inbox/${id}`) } }, sessions,
     addSession: session => setSessions(old => [session, ...old]), signedOut, signOut: () => setSignedOut(true), signIn: () => setSignedOut(false) }}>{children}</Context>
 }
 export function usePreview() { const state = useContext(Context); if (!state) throw new Error("PreviewProvider is missing"); return state }
