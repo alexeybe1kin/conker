@@ -10,6 +10,7 @@ import { SystemPage } from "./pages/system"
 import { AgentsPage } from "./pages/agents"
 import { ToolsPage } from "./pages/tools"
 import { MemoryPage } from "./pages/memory"
+import { JournalPage } from "./pages/journal"
 import "./styles.css"
 
 createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvider><PreviewProvider><BrowserRouter><Routes>
@@ -19,7 +20,8 @@ createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvi
     <Route path="agents" element={<AgentsPage />} /><Route path="agents/:id" element={<AgentsPage />} />
     <Route path="tools" element={<ToolsPage />} /><Route path="tools/:id" element={<ToolsPage />} />
     <Route path="memory" element={<MemoryPage />} /><Route path="memory/:id" element={<MemoryPage />} />
-    {["Journal", "Jobs"].map(name => <Route key={name} path={`${name.toLowerCase()}/*`} element={<PlannedScreen name={name} />} />)}
+    <Route path="journal" element={<JournalPage />} />
+    <Route path="jobs/*" element={<PlannedScreen name="Jobs" />} />
     <Route path="*" element={<PlannedScreen name="Page not found" />} />
   </Route><Route path="setup" element={<PlannedScreen name="First run" />} />
 </Routes></BrowserRouter></PreviewProvider></TooltipProvider></ThemeProvider>)
