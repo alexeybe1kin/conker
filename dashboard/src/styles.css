@@ -198,6 +198,18 @@ h2 > svg { width: 18px; height: 18px; color: var(--muted-foreground); }
 .activity-line { font-size: .8rem; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .grant-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0; font-size: .8rem; padding: 15px; border: 1px solid var(--border); border-radius: var(--radius); }
 .grant-delta svg { width: 16px; } .dialog-actions { margin-top: 24px; }
+.filter-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 25px; }
+.filter-bar select { padding: 7px 12px; font-size: .8rem; }
+.search-field { position: relative; flex: 1; min-width: 180px; max-width: 480px; }
+.search-field > svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; color: var(--muted-foreground); }
+.search-field input { padding-left: 36px; }
+.catalogue-card { box-shadow: none; }
+.catalogue-card td { padding-top: 19px; padding-bottom: 19px; font-size: .8rem; }
+.catalogue-card th { font-size: .7rem; font-weight: 450; color: var(--muted-foreground); }
+.table-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 550; }
+.table-link svg { width: 13px; height: 13px; color: var(--muted-foreground); }
+.table-secondary { display: block; font-size: .7rem; color: var(--muted-foreground); margin-top: 6px; }
+.table-muted { color: var(--muted-foreground); }
 @media (max-width: 900px) { .two-column, .agent-grid, .contract-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1000px) { .service-row { grid-template-columns: 140px 1fr; } .version-badge { grid-column: 1; justify-self: start; } .system-bottom { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .vitals-grid { grid-template-columns: 1fr; } .vital-card { flex-direction: row; align-items: center; gap: 0; } .vital-card > * { width: 50%; } .system-notice { align-items: flex-start; flex-direction: column; } .service-row { grid-template-columns: 1fr auto; } .service-evidence { grid-row: 2; grid-column: 1 / -1; } .version-badge { grid-row: 1; grid-column: 2; } }

@@ -8,6 +8,7 @@ import { Chat } from "./pages/chat"
 import { InboxPage } from "./pages/inbox"
 import { SystemPage } from "./pages/system"
 import { AgentsPage } from "./pages/agents"
+import { ToolsPage } from "./pages/tools"
 import "./styles.css"
 
 createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvider><PreviewProvider><BrowserRouter><Routes>
@@ -15,7 +16,8 @@ createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvi
     <Route path="inbox" element={<InboxPage />} /><Route path="inbox/:id" element={<InboxPage />} />
     <Route path="system" element={<SystemPage />} />
     <Route path="agents" element={<AgentsPage />} /><Route path="agents/:id" element={<AgentsPage />} />
-    {["Tools", "Memory", "Journal", "Jobs"].map(name => <Route key={name} path={`${name.toLowerCase()}/*`} element={<PlannedScreen name={name} />} />)}
+    <Route path="tools" element={<ToolsPage />} /><Route path="tools/:id" element={<ToolsPage />} />
+    {["Memory", "Journal", "Jobs"].map(name => <Route key={name} path={`${name.toLowerCase()}/*`} element={<PlannedScreen name={name} />} />)}
     <Route path="*" element={<PlannedScreen name="Page not found" />} />
   </Route><Route path="setup" element={<PlannedScreen name="First run" />} />
 </Routes></BrowserRouter></PreviewProvider></TooltipProvider></ThemeProvider>)
