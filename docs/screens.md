@@ -79,14 +79,17 @@ architecture, not decoration: it says which screens are for living with Conker a
 governing it.
 
 ```
-The daily loop     Chat · Proposals · Approvals
+The daily loop     Chat · Inbox
 Reference          Memory · Journal
 Control            Agents · Tools · Jobs · System
 ```
 
+**Eight screens, plus first-run setup outside the shell.** Proposals and approvals are one Inbox
+with two kinds — both are "Conker wants something from you", and one place to check beats two habits.
+
 - **Chat is the default route.** Opening Conker puts you in conversation, not on a dashboard.
-- **Approvals and Proposals carry counts** — they are the only two that make a claim on attention,
-  and an approval nobody sees is an action that silently never happens.
+- **The Inbox carries a count** — it is the one thing that makes a claim on your attention, and an
+  approval nobody sees is an action that silently never happens.
 - **Settings has no top-level entry.** Model spend lives in Agents, backups in System, appearance in
   a menu under the owner's name. A settings screen is where features go when nobody decided where
   they belong.
@@ -99,8 +102,7 @@ Control            Agents · Tools · Jobs · System
 |---|---|---|
 | `/` | Chat | redirects to the most recent open session |
 | `/chat/:sessionId` | Chat | a fork is a different session, and the URL says so |
-| `/proposals` · `/proposals/:id` | Proposals | |
-| `/approvals` · `/approvals/:id` | Approvals | `:id` is the request, deep-linkable from a notification |
+| `/inbox` · `/inbox/:id` | Inbox | proposals and approval-requests; `:id` deep-links from a notification |
 | `/memory` · `/memory/:id` | Memory | `:id` is a memory, with its evidence |
 | `/journal` | Journal | filtered by date and actor |
 | `/agents` · `/agents/:id` | Agents | autonomy lives here |
@@ -212,9 +214,13 @@ Per-service health in the module contract's own vocabulary, host vitals, the bac
 setup outside the shell · tool activity inline in the thread · one approvals queue across sessions ·
 sensitivity on the tool and autonomy on the agent.
 
-**Not settled:** whether `act outward` can ever fall inside autonomy · whether Journal is a screen
-or a filter over other screens · whether Proposals and Approvals are one queue with two kinds or two
-screens · what the first-run steps ask for, in what order.
+**Resolved 2026-09-12:** Proposals and Approvals are **one Inbox** with two kinds. Journal is **its
+own screen**. Autonomy is not a dial — it is **standing grants** with bounds, budget and expiry
+(open-issues A7/A12); the Agents screen shows those grants, the Tools screen shows each tool's
+sensitivity (A6). `act outward` inside a grant stays open (A3) and is a policy question, not a screen
+one.
+
+**Still open:** what the first-run steps ask for, in what order — decided when that screen is built.
 
 Each screen gets an issue for the feature conversation. The issue is where a decision lands; it is
 not where the screen gets designed.
