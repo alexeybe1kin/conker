@@ -11,4 +11,4 @@ export function EmptyState({ title, children }: { title: string; children: React
   return <Card className="restful"><CardHeader><Mark /><CardTitle><h2>{title}</h2></CardTitle><CardDescription>{children}</CardDescription></CardHeader><CardContent><Status evidence={{ state: "empty", detail: "Nothing needs your attention." }} /></CardContent></Card>
 }
 export function SourceLink({ to, children }: { to: string; children: ReactNode }) { return <Link className="source-link" to={to}>{children}<ArrowUpRight aria-hidden="true" /></Link> }
-export function PlannedScreen({ name }: { name: string }) { return <div className="page"><PageHeading eyebrow="In the making" title={name} description="This part of the preview is being shaped." /><Status evidence={{ state: "planned", detail: "Fixture screen coming next." }} /></div> }
+export function NotFound() { return <div className="page"><PageHeading eyebrow="Your space" title="That page isn?t here." description="The address may have changed. Your conversations are still where you left them." /><Link className="source-link" to="/chat">Back to Chat ?</Link></div> }

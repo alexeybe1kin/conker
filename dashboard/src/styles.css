@@ -43,7 +43,7 @@ summary::-webkit-details-marker { display: none; }
 .owner-text { display: flex; flex-direction: column; align-items: flex-start; flex: 1; gap: 2px; }
 .owner-text strong { font-size: .8rem; font-weight: 550; }
 .owner-text small { color: var(--muted-foreground); font-size: .67rem; font-weight: 400; }
-.owner-menu { position: absolute; bottom: calc(100% + 8px); left: 0; width: 240px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--popover); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 12px 40px color-mix(in oklch, var(--overlay) 20%, transparent); }
+.owner-menu { z-index: 60; width: 240px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--popover); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 12px 40px color-mix(in oklch, var(--overlay) 20%, transparent); }
 .owner-menu p { display: flex; gap: 8px; align-items: center; font-size: .75rem; padding: 6px; color: var(--muted-foreground); }
 .owner-menu p svg { width: 15px; }
 .workspace { margin-left: 228px; width: calc(100% - 228px); min-width: 0; }
