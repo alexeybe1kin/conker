@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { sessionFixtures, type Session } from "./fixtures/chat"
+import { ownerFixture } from "./fixtures/shared"
 
 type Decision = "approved" | "denied" | "declined" | "accepted"
 export type PreviewEvent = { id: string; actor: string; summary: string; kind: string; to: string; date: string }
@@ -12,6 +13,8 @@ type PreviewState = {
   correctMemory: (id: string, text: string) => void; forgetMemory: (id: string) => void;
   jobState: Record<string, { paused: boolean; runs: number }>;
   updateJob: (id: string, state: { paused: boolean; runs: number }) => void;
+  profile: { name: string; companion: string; shape: string };
+  setProfile: (profile: { name: string; companion: string; shape: string }) => void;
 }
 const Context = createContext<PreviewState | null>(null)
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -22,8 +25,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [memoryEdits, setMemoryEdits] = useState<Record<string, string>>({})
   const [forgottenMemory, setForgottenMemory] = useState<string[]>([])
   const [jobState, setJobState] = useState<Record<string, { paused: boolean; runs: number }>>({})
+  const [profile, setProfile] = useState({ name: ownerFixture.name, companion: ownerFixture.companion, shape: "Practical" })
   function record(summary: string, kind: string, to: string) { setEvents(old => [{ id: crypto.randomUUID(), actor: "You", summary, kind, to, date: "2026-09-12" }, ...old]) }
-  return <Context value={{ events, record, memoryEdits, forgottenMemory, jobState,
+  return <Context value={{ events, record, memoryEdits, forgottenMemory, jobState, profile, setProfile,
     updateJob: (id, state) => setJobState(old => ({ ...old, [id]: state })),
     correctMemory: (id, text) => { setMemoryEdits(old => ({ ...old, [id]: text })); record("Corrected a fixture memory", "Memory", `/memory/${id}`) },
     forgetMemory: id => { setForgottenMemory(old => [...old, id]); record("Forgot a fixture memory; tombstone retained", "Memory", `/memory/${id}`) },

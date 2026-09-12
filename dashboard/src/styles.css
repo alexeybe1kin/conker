@@ -248,6 +248,35 @@ blockquote { margin: 0; border-left: 2px solid var(--border); padding-left: 13px
 .job-result .eyebrow { font-size: .61rem; margin-bottom: 8px; }
 .job-details { padding-top: 20px; }
 .job-actions { gap: 8px; flex-wrap: wrap; margin-top: auto; } .job-actions .fine-print { width: 100%; margin-top: 8px; }
+.setup-page { min-height: 100dvh; }
+.setup-top { padding: 25px 40px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.setup-top .wordmark { padding: 0; }
+.setup-container { max-width: 620px; padding: 35px 25px 60px; margin: auto; }
+.setup-progress { display: flex; justify-content: space-between; color: var(--muted-foreground); font-size: .7rem; }
+.step-track { list-style: none; display: flex; gap: 7px; margin: 12px 0 22px; padding: 0; }
+.step-track li { height: 3px; flex: 1; background: var(--border); border-radius: 3px; }
+.step-track .reached { background: var(--primary); }
+.setup-badge { font-size: .65rem; margin-bottom: 35px; }
+.setup-step { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.setup-step h1 { font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.18; }
+.setup-lead { font-size: 1rem; line-height: 1.9; color: var(--muted-foreground); }
+.setup-step .eyebrow { margin-bottom: -10px; }
+.setup-step [data-slot="field"], .setup-step [data-slot="field-group"] { width: 100%; }
+.setup-step > [data-slot="button"] { margin-top: 5px; }
+.setup-back { margin: 30px 0 0 -12px; }
+.setup-footer { text-align: center; padding: 20px; font-size: .7rem; color: var(--muted-foreground); }
+.password-explanation { display: flex; gap: 15px; padding: 20px; background: var(--secondary); border-radius: 12px; }
+.password-explanation svg { width: 19px; height: 19px; color: var(--muted-foreground); margin-top: 3px; }
+.password-explanation p, .setup-recovery p { font-size: .82rem; line-height: 1.9; }
+.setup-recovery { width: 100%; } .setup-recovery p { margin-top: 12px; color: var(--muted-foreground); }
+.field-title { margin-bottom: 13px; font-size: .8rem; font-weight: 500; }
+.shape-preview { width: 100%; box-shadow: none; } .shape-preview p { font-size: .9rem; line-height: 1.8; }
+.shape-preview p.fine-print { font-size: .7rem; margin-top: 15px; }
+.setup-services { width: 100%; }
+.setup-services > div { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.setup-services strong { font-size: .87rem; font-weight: 500; }
+.setup-services [data-slot="status"] { font-size: .76rem; line-height: 1.7; }
+@media (max-width: 760px) { .setup-top { padding: 20px; } .setup-top [data-slot="button"] { font-size: .7rem; } .setup-container { padding-top: 18px; } }
 @media (max-width: 1000px) { .jobs-list { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .timeline-icon { display: none; } .journal-entry > summary { gap: 12px; } .journal-detail { padding-left: 50px; } }
 @media (max-width: 1000px) { .memory-list { grid-template-columns: 1fr; } }

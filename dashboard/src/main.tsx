@@ -12,6 +12,7 @@ import { ToolsPage } from "./pages/tools"
 import { MemoryPage } from "./pages/memory"
 import { JournalPage } from "./pages/journal"
 import { JobsPage } from "./pages/jobs"
+import { SetupPage } from "./pages/setup"
 import "./styles.css"
 
 createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvider><PreviewProvider><BrowserRouter><Routes>
@@ -24,5 +25,5 @@ createRoot(document.getElementById("root")!).render(<ThemeProvider><TooltipProvi
     <Route path="journal" element={<JournalPage />} />
     <Route path="jobs" element={<JobsPage />} /><Route path="jobs/:id" element={<JobsPage />} />
     <Route path="*" element={<PlannedScreen name="Page not found" />} />
-  </Route><Route path="setup" element={<PlannedScreen name="First run" />} />
+  </Route><Route path="setup" element={<SetupPage />} />
 </Routes></BrowserRouter></PreviewProvider></TooltipProvider></ThemeProvider>)
